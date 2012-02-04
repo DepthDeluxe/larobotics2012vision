@@ -7,7 +7,7 @@ using namespace std;
 // edge detection variables
 int lowThresh = 745;
 int highThresh = 1000;
-int brightThresh = 200;
+int brightThresh = 6200;
 int houghThresh = 100;
 bool threshChanged = false;
 
@@ -25,12 +25,6 @@ void lowThresholdCallback(int value)
 void highThresholdCallback(int value)
 {
 	highThresh = value;
-	threshChanged = true;
-}
-
-void brightThresholdCallback(int value)
-{
-	brightThresh = value;
 	threshChanged = true;
 }
 
@@ -56,7 +50,6 @@ void main()
 	// create trackbars for thresholding
 	cvCreateTrackbar("Low Threshold", "OpenCV Window", &lowThresh, 2000, lowThresholdCallback);
 	cvCreateTrackbar("High Threshold", "OpenCV Window", &highThresh, 2000, highThresholdCallback);
-	cvCreateTrackbar("Bright Threshold", "OpenCV Window", &brightThresh, 255, brightThresholdCallback);
 	cvCreateTrackbar("Hough Threshold", "OpenCV Window", &houghThresh, 250, houghThesholdCallback);
 
 	while (key != 'q')
@@ -69,7 +62,6 @@ void main()
 		{
 			robotVision.SetLowThreshold(lowThresh);
 			robotVision.SetHighThreshold(highThresh);
-			robotVision.SetBrightThreshold(brightThresh);
 			robotVision.SetHoughThreshold(houghThresh);
 			threshChanged = false;
 		}
@@ -79,13 +71,15 @@ void main()
 		robotVision.TransformPass();
 
 		// draw hough lines on filtered image
-		robotVision.DrawHoughLines(RV_DRAW_HOUGH_ON_FILTERED);
+		robotVision.DrawHoughLines();
 
 		// display the original image with hough lines on top of them
 		if (currentImageView == 1)
 			cvShowImage("OpenCV Window", robotVision.GetRawImage());
 		else if (currentImageView == 2)
 			cvShowImage("OpenCV Window", robotVision.GetFilteredImage());
+		else if (currentImageView == 3)
+			cvShowImage("OpenCV Window", robotVision.GetGrayImage());
 
 		key = cvWaitKey(20);
 
@@ -93,6 +87,8 @@ void main()
 			currentImageView = 1;
 		else if (key == '2')
 			currentImageView = 2;
+		else if (key == '3')
+			currentImageView = 3;
 	}
 
 	// release objects
@@ -119,11 +115,6 @@ void SaveData()
 
 	// write high threshold
 	itoa(highThresh, saveBuffer, 10);
-	save.write(saveBuffer, strlen(saveBuffer));
-	save.write("\n", 1);
-
-	// write brightness threshold
-	itoa(brightThresh, saveBuffer, 10);
 	save.write(saveBuffer, strlen(saveBuffer));
 	save.write("\n", 1);
 
@@ -156,10 +147,6 @@ void LoadData()
 	// get highThreshold
 	load.getline(loadBuffer, 10);
 	highThresh = atoi(loadBuffer);
-
-	// get brightThreshold
-	load.getline(loadBuffer, 10);
-	brightThresh = atoi(loadBuffer);
 
 	// get houghThreshold
 	load.getline(loadBuffer, 10);

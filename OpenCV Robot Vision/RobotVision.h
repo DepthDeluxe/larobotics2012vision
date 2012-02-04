@@ -12,7 +12,6 @@ private:
 	CvCapture*	camera;
 	IplImage*	image;
 	IplImage*	image_gray;
-	IplImage*	brightFilterImage;
 	IplImage*	cannyImage;
 
 	CvMemStorage*	storage;
@@ -20,7 +19,6 @@ private:
 
 	int lowThreshold;
 	int highThreshold;
-	int brightThreshold;
 	int houghThreshold;
 public:
 	RobotVision(int hi, int lo, int hou);
@@ -31,13 +29,13 @@ public:
 
 	void SetLowThreshold(int value);
 	void SetHighThreshold(int value);
-	void SetBrightThreshold(int value);
 	void SetHoughThreshold(int value);
 
-	void DrawHoughLines(int imgtodrawon);
+	void DrawHoughLines();
 
 	void Dispose();
 
 	IplImage* GetRawImage();
 	IplImage* GetFilteredImage();
+	IplImage* GetGrayImage();
 };
