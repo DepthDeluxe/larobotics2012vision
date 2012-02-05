@@ -41,21 +41,72 @@ void RobotVision::FilterPass()
 void RobotVision::TransformPass()
 {
 	// do standard hough transform
-	lineBuffer = cvHoughLines2(cannyImage, storage, CV_HOUGH_STANDARD, 1, CV_PI / 180, houghThreshold);
+	rawLineBuffer = cvHoughLines2(cannyImage, storage, CV_HOUGH_STANDARD, 1, CV_PI / (180*2), houghThreshold);
+
+	// clear lineBuffer
+	lineBuffer.clear();
+
+	RhoTheta temp;
+	float* line;
+
+	// save rawLineBuffer values into lineBuffer
+	for (int n = 0; n < rawLineBuffer->total; n++)
+	{
+		line = (float*)cvGetSeqElem(rawLineBuffer, n);
+
+		temp.Rho = line[0];
+		temp.Theta = line[1];
+
+		lineBuffer.push_back(temp);
+	}
+
+	// filter the lines
+	GetRectangleLines();
+}
+
+void RobotVision::GetRectangleLines()
+{
+	// clear filter buffer
+	filteredLineBuffer.clear();
+
+	////////////////////////////////////////
+	for (int l1 = 0; l1 < lineBuffer.size(); l1++)
+		for (int l2 = 0; l2 < lineBuffer.size(); l2++)
+		{
+			if (abs(lineBuffer[l1].Theta - lineBuffer[l2].Theta) < 0.25)
+				filteredLineBuffer.push_back(lineBuffer[l1]);
+		}
+
+	/*
+	vector<RhoTheta> averagingFilter;
+	RhoTheta temp;
+
+	for (int l1 = 0; l1 < filteredLineBuffer.size(); l1++)
+		for (int l2 = 0; l2 < filteredLineBuffer.size(); l2++)
+		{
+			if (abs(filteredLineBuffer[l1].Rho - filteredLineBuffer[l2].Rho) < 5)
+			{
+				// average the two lines
+				temp.Rho = (filteredLineBuffer[l1].Rho + filteredLineBuffer[l2].Rho) / 2;
+				temp.Theta = (filteredLineBuffer[l1].Theta + filteredLineBuffer[l2].Theta) / 2;
+
+				averagingFilter.push_back(temp);
+			}
+		}
+
+	filteredLineBuffer = averagingFilter;
+	*/
 }
 
 void RobotVision::DrawHoughLines()
 {
-	for (int n = 0; n < lineBuffer->total; n++)
+	for (int n = 0; n < filteredLineBuffer.size(); n++)
 	{
-		// get a line from the buffer
-		float* line = (float*)cvGetSeqElem(lineBuffer, n);
-
 		// generate points from the line
-		double a = cos(line[1]);
-		double b = sin(line[1]);
-		double x0 = a * line[0];
-		double y0 = b * line[0];
+		double a = cos(filteredLineBuffer[n].Theta);
+		double b = sin(filteredLineBuffer[n].Theta);
+		double x0 = a * filteredLineBuffer[n].Rho;
+		double y0 = b * filteredLineBuffer[n].Rho;
 
 		// load them into CvPoint class
 		CvPoint pt1, pt2;
