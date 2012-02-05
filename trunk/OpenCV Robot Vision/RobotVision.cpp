@@ -66,36 +66,72 @@ void RobotVision::TransformPass()
 
 void RobotVision::GetRectangleLines()
 {
+	if (lineBuffer.size() > 100 || lineBuffer.size() < 8)
+		return;
+
 	// clear filter buffer
 	filteredLineBuffer.clear();
 
-	////////////////////////////////////////
-	for (int l1 = 0; l1 < lineBuffer.size(); l1++)
-		for (int l2 = 0; l2 < lineBuffer.size(); l2++)
-		{
-			if (abs(lineBuffer[l1].Theta - lineBuffer[l2].Theta) < 0.25)
-				filteredLineBuffer.push_back(lineBuffer[l1]);
-		}
-
-	/*
-	vector<RhoTheta> averagingFilter;
-	RhoTheta temp;
+	bool* isPerp = new bool[filteredLineBuffer.size()];
+	bool* isPara = new bool[filteredLineBuffer.size()];
 
 	for (int l1 = 0; l1 < filteredLineBuffer.size(); l1++)
 		for (int l2 = 0; l2 < filteredLineBuffer.size(); l2++)
 		{
-			if (abs(filteredLineBuffer[l1].Rho - filteredLineBuffer[l2].Rho) < 5)
-			{
-				// average the two lines
-				temp.Rho = (filteredLineBuffer[l1].Rho + filteredLineBuffer[l2].Rho) / 2;
-				temp.Theta = (filteredLineBuffer[l1].Theta + filteredLineBuffer[l2].Theta) / 2;
+			if (abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[l1].Theta) < 0.2)
+				isPara[l1] = true;
 
-				averagingFilter.push_back(temp);
+			else if (abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[l1].Theta) < CV_PI / 2 + 0.1
+				&& abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[l1].Theta) > CV_PI / 2 - 0.1)
+			{
+				isPerp[l1] = true;
 			}
 		}
 
-	filteredLineBuffer = averagingFilter;
-	*/
+	// add if perpendicular and parallel lines exist
+	for (int n = 0; n < lineBuffer.size(); n++)
+	{
+		if (isPerp[n] && isPara[n])
+			filteredLineBuffer.push_back(lineBuffer[n]);
+	}
+
+	// delete pointers related to this filtering
+	delete[] isPerp;
+	delete[] isPara;
+	
+	// create filter vector
+	vector<RhoTheta> averageFilter = filteredLineBuffer;
+
+	int* numAverages = new int[filteredLineBuffer.size()];
+	for (int n = 0; n < filteredLineBuffer.size(); n++)
+		numAverages[n] = 1;
+
+	for (int avg = 0; avg < filteredLineBuffer.size(); avg++)
+		for (int comp = 0; comp < filteredLineBuffer.size(); comp++)
+		{
+			// if their rho values are similar, average the lines
+			if (abs(averageFilter[avg].Rho - filteredLineBuffer[comp].Rho) < 30
+				&& abs(averageFilter[avg].Theta - filteredLineBuffer[comp].Theta) < 1)
+			{
+				averageFilter[avg].Rho = (averageFilter[avg].Rho * numAverages[avg] + filteredLineBuffer[comp].Rho) / (numAverages[avg]+1);
+				averageFilter[avg].Theta = (averageFilter[avg].Theta * numAverages[avg] + filteredLineBuffer[comp].Theta) / (numAverages[avg]+1);
+
+				// increase the number of averages
+				numAverages[avg]++;
+			}
+		}
+
+	// save modified averages back into original vector
+	filteredLineBuffer = averageFilter;
+	delete[] numAverages;	
+}
+
+void RobotVision::CalculatePositionToTarget()
+{
+	if (filteredLineBuffer.size() != 4)
+		return;
+
+
 }
 
 void RobotVision::DrawHoughLines()

@@ -38,6 +38,7 @@ public:
 	void FilterPass();
 	void TransformPass();
 	void GetRectangleLines();
+	void CalculatePositionToTarget();
 
 	void SetLowThreshold(int value);
 	void SetHighThreshold(int value);
