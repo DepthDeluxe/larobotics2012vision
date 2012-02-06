@@ -66,11 +66,11 @@ void RobotVision::TransformPass()
 
 void RobotVision::GetRectangleLines()
 {
-	if (lineBuffer.size() > 100 || lineBuffer.size() < 8)
-		return;
-
 	// clear filter buffer
 	filteredLineBuffer.clear();
+
+	if (lineBuffer.size() > 100 || lineBuffer.size() < 8)
+		return;
 
 	bool* isPerp = new bool[filteredLineBuffer.size()];
 	bool* isPara = new bool[filteredLineBuffer.size()];
@@ -85,6 +85,12 @@ void RobotVision::GetRectangleLines()
 				&& abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[l1].Theta) > CV_PI / 2 - 0.1)
 			{
 				isPerp[l1] = true;
+			}
+
+			if (filteredLineBuffer[l1].Rho < 0)
+			{
+				filteredLineBuffer[l1].Rho = -filteredLineBuffer[l1].Rho;
+				filteredLineBuffer[l1].Theta -= CV_PI;
 			}
 		}
 
@@ -123,14 +129,39 @@ void RobotVision::GetRectangleLines()
 
 	// save modified averages back into original vector
 	filteredLineBuffer = averageFilter;
-	delete[] numAverages;	
+	bool simLineExists = false;
+	
+	delete[] numAverages;
+
+	// compress line buffer size
+	averageFilter.clear();
+	for (int n = 0; n < filteredLineBuffer.size(); n++)
+	{
+		for (int comp = 0; comp < averageFilter.size(); comp++)
+		{
+			if (abs(filteredLineBuffer[n].Rho - averageFilter[comp].Rho) < 30
+				&& abs(filteredLineBuffer[n].Theta - averageFilter[comp].Theta) < 1
+				&& n != comp)
+			{
+				simLineExists = true;
+			}
+		}
+
+		// if there is no similar line that exists, add to final buffer
+		if (!simLineExists)
+			averageFilter.push_back(filteredLineBuffer[n]);
+
+		simLineExists = false;
+	}
+
+	filteredLineBuffer = averageFilter;
 }
 
 void RobotVision::CalculatePositionToTarget()
 {
+	// check to see if proper data exists
 	if (filteredLineBuffer.size() != 4)
 		return;
-
 
 }
 
