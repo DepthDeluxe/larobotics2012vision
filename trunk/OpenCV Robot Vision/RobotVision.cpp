@@ -72,25 +72,29 @@ void RobotVision::GetRectangleLines()
 	if (lineBuffer.size() > 100 || lineBuffer.size() < 8)
 		return;
 
-	bool* isPerp = new bool[filteredLineBuffer.size()];
-	bool* isPara = new bool[filteredLineBuffer.size()];
+	bool* isPerp = new bool[lineBuffer.size()];
+	bool* isPara = new bool[lineBuffer.size()];
 
-	for (int l1 = 0; l1 < filteredLineBuffer.size(); l1++)
-		for (int l2 = 0; l2 < filteredLineBuffer.size(); l2++)
+	// if any of the rho values are negative, set them to be +
+	for (int n = 0; n < lineBuffer.size(); n++)
+	{
+		if (lineBuffer[n].Rho < 0)
 		{
-			if (abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[l1].Theta) < 0.2)
+			lineBuffer[n].Rho = -lineBuffer[n].Rho;
+			lineBuffer[n].Theta -= CV_PI;
+		}
+	}
+
+	for (int l1 = 0; l1 < lineBuffer.size(); l1++)
+		for (int l2 = 0; l2 < lineBuffer.size(); l2++)
+		{
+			if (abs(lineBuffer[l1].Theta - lineBuffer[l1].Theta) < 0.2)
 				isPara[l1] = true;
 
-			else if (abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[l1].Theta) < CV_PI / 2 + 0.1
-				&& abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[l1].Theta) > CV_PI / 2 - 0.1)
+			if (abs(lineBuffer[l1].Theta - lineBuffer[l1].Theta) < CV_PI / 2 + 0.1
+				&& abs(lineBuffer[l1].Theta - lineBuffer[l1].Theta) > CV_PI / 2 - 0.1)
 			{
 				isPerp[l1] = true;
-			}
-
-			if (filteredLineBuffer[l1].Rho < 0)
-			{
-				filteredLineBuffer[l1].Rho = -filteredLineBuffer[l1].Rho;
-				filteredLineBuffer[l1].Theta -= CV_PI;
 			}
 		}
 
@@ -104,7 +108,7 @@ void RobotVision::GetRectangleLines()
 	// delete pointers related to this filtering
 	delete[] isPerp;
 	delete[] isPara;
-	
+
 	// create filter vector
 	vector<RhoTheta> averageFilter = filteredLineBuffer;
 
@@ -129,29 +133,44 @@ void RobotVision::GetRectangleLines()
 
 	// save modified averages back into original vector
 	filteredLineBuffer = averageFilter;
-	bool simLineExists = false;
-	
 	delete[] numAverages;
 
-	// compress line buffer size
+	// remove multiple lines
 	averageFilter.clear();
-	for (int n = 0; n < filteredLineBuffer.size(); n++)
+
+	bool singlePerp = false;
+	bool valueExists = false;
+
+	for (int l1 = 0; l1 < filteredLineBuffer.size(); l1++)
 	{
-		for (int comp = 0; comp < averageFilter.size(); comp++)
+		// do perpendicular line checking
+		for (int comp = 0; comp < filteredLineBuffer.size(); comp++)
 		{
-			if (abs(filteredLineBuffer[n].Rho - averageFilter[comp].Rho) < 30
-				&& abs(filteredLineBuffer[n].Theta - averageFilter[comp].Theta) < 1
-				&& n != comp)
+			if (abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[comp].Theta) < CV_PI/2 + .25
+				&& abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[comp].Theta) > CV_PI/2 - .25)
 			{
-				simLineExists = true;
+				singlePerp = true;
 			}
 		}
 
-		// if there is no similar line that exists, add to final buffer
-		if (!simLineExists)
-			averageFilter.push_back(filteredLineBuffer[n]);
+		// look to see if value exists
+		for (int l2 = 0; l2 < averageFilter.size(); l2++)
+		{
+			if (abs(filteredLineBuffer[l1].Rho - averageFilter[l2].Rho) < 20
+				&& abs(filteredLineBuffer[l1].Theta - averageFilter[l2].Theta) < 1)
+			{
+				valueExists = true;
+			}
+		}
 
-		simLineExists = false;
+		// if value doesn't exist, add it
+		if (!valueExists && singlePerp)
+		{
+			averageFilter.push_back(filteredLineBuffer[l1]);
+			singlePerp = false;
+		}
+
+		valueExists = false;
 	}
 
 	filteredLineBuffer = averageFilter;
@@ -162,7 +181,6 @@ void RobotVision::CalculatePositionToTarget()
 	// check to see if proper data exists
 	if (filteredLineBuffer.size() != 4)
 		return;
-
 }
 
 void RobotVision::DrawHoughLines()
