@@ -45,6 +45,7 @@ public:
 	void SetHoughThreshold(int value);
 
 	void DrawHoughLines();
+	void DrawRectangle();
 
 	void Dispose();
 
