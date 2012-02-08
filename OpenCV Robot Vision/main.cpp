@@ -1,4 +1,7 @@
 #include <fstream>
+#include <iostream>
+#include <time.h>
+
 #include <highgui.h>
 #include "RobotVision.h"
 
@@ -52,6 +55,10 @@ void main()
 	cvCreateTrackbar("High Threshold", "OpenCV Window", &highThresh, 2000, highThresholdCallback);
 	cvCreateTrackbar("Hough Threshold", "OpenCV Window", &houghThresh, 250, houghThesholdCallback);
 
+	// init fps calculator
+	int frames = 0;
+	time_t start = 0, end = 0;
+
 	while (key != 'q')
 	{
 		// get next frame
@@ -89,6 +96,21 @@ void main()
 			currentImageView = 2;
 		else if (key == '3')
 			currentImageView = 3;
+
+		// update fps
+		frames++;
+
+		if (frames%15 == 0)
+		{
+			end = time(NULL);
+			float diffTime = difftime(end, start);
+
+			// output framerate
+			cout<< "FPS: " << 1/(diffTime) << endl;
+
+			// get start time
+			start = time(NULL);
+		}
 	}
 
 	// release objects

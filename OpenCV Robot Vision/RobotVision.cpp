@@ -174,13 +174,55 @@ void RobotVision::GetRectangleLines()
 	}
 
 	filteredLineBuffer = averageFilter;
+
+	/// lines filtered ///
+	// now map the rectangles
+
+	// check to see if only 4 lines exist
+	if (filteredLineBuffer.size() != 4)
+		return;
+
+	RhoTheta left, right, top, bottom;
+
+	for (int n = 0; n < filteredLineBuffer.size(); n++)
+	{
+		for (int comp = 0; comp < filteredLineBuffer.size(); comp++)
+		{
+			if (abs(filteredLineBuffer[n].Theta - filteredLineBuffer[comp].Theta) < 0.1)
+			{
+				if (filteredLineBuffer[n].Rho < filteredLineBuffer[comp].Rho)
+				{
+					top = filteredLineBuffer[n];
+				}
+				else
+				{
+					bottom = filteredLineBuffer[n];
+				}
+			}
+
+			else
+			{
+				if (filteredLineBuffer[n].Rho < filteredLineBuffer[comp].Rho)
+				{
+					left = filteredLineBuffer[n];
+				}
+				else
+				{
+					right = filteredLineBuffer[n];
+				}
+			}
+		}
+	}
+}
+
+void RobotVision::DrawRectangle()
+{
+
 }
 
 void RobotVision::CalculatePositionToTarget()
 {
-	// check to see if proper data exists
-	if (filteredLineBuffer.size() != 4)
-		return;
+
 }
 
 void RobotVision::DrawHoughLines()
