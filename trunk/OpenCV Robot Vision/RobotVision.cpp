@@ -182,42 +182,112 @@ void RobotVision::GetRectangleLines()
 	if (filteredLineBuffer.size() != 4)
 		return;
 
-	RhoTheta left, right, top, bottom;
+	RhoTheta horizLines[2];
+	RhoTheta vertLines[2];
+
+	int hCount = 0, vCount = 0;
 
 	for (int n = 0; n < filteredLineBuffer.size(); n++)
 	{
-		for (int comp = 0; comp < filteredLineBuffer.size(); comp++)
+		if (filteredLineBuffer[n].Theta < 0.2 && hCount < 2)
 		{
-			if (abs(filteredLineBuffer[n].Theta - filteredLineBuffer[comp].Theta) < 0.1)
-			{
-				if (filteredLineBuffer[n].Rho < filteredLineBuffer[comp].Rho)
-				{
-					top = filteredLineBuffer[n];
-				}
-				else
-				{
-					bottom = filteredLineBuffer[n];
-				}
-			}
-
-			else
-			{
-				if (filteredLineBuffer[n].Rho < filteredLineBuffer[comp].Rho)
-				{
-					left = filteredLineBuffer[n];
-				}
-				else
-				{
-					right = filteredLineBuffer[n];
-				}
-			}
+			horizLines[hCount] = filteredLineBuffer[n];
+			hCount++;
 		}
+		else if (vCount < 2)
+		{
+			vertLines[vCount] = filteredLineBuffer[n];
+			vCount++;
+		}
+	}
+
+	if (horizLines[0].Rho > horizLines[1].Rho)
+	{
+		rightSide = horizLines[0];
+		leftSide = horizLines[1];
+	}
+	if (horizLines[1].Rho > horizLines[0].Rho)
+	{
+		leftSide = horizLines[0];
+		rightSide = horizLines[1];
+	}
+	if (vertLines[0].Rho > vertLines[1].Rho)
+	{
+		bottomSide = vertLines[0];
+		topSide = vertLines[1];
+	}
+	if (vertLines[1].Rho > vertLines[0].Rho)
+	{
+		topSide = vertLines[0];
+		bottomSide = vertLines[1];
 	}
 }
 
 void RobotVision::DrawRectangle()
 {
+	// generate points from the line
+	double a = cos(leftSide.Theta);
+	double b = sin(leftSide.Theta);
+	double x0 = a * leftSide.Rho;
+	double y0 = b * leftSide.Rho;
 
+	// load them into CvPoint class
+	CvPoint pt1, pt2;
+	pt1.x = cvRound(x0 + 1000*(-b));
+	pt1.y = cvRound(y0 + 1000*(a));
+	pt2.x = cvRound(x0 - 1000*(-b));
+	pt2.y = cvRound(y0 - 1000*(a));
+
+	// draw left side
+	cvLine( image, pt1, pt2, CV_RGB(255,0,0), 3, 8 );
+
+
+	// generate points from the line
+	a = cos(rightSide.Theta);
+	b = sin(rightSide.Theta);
+	x0 = a * rightSide.Rho;
+	y0 = b * rightSide.Rho;
+
+	// load them into CvPoint class
+	pt1.x = cvRound(x0 + 1000*(-b));
+	pt1.y = cvRound(y0 + 1000*(a));
+	pt2.x = cvRound(x0 - 1000*(-b));
+	pt2.y = cvRound(y0 - 1000*(a));
+
+	// draw right side
+	cvLine( image, pt1, pt2, CV_RGB(0,255,0), 3, 8 );
+
+
+	// generate points from the line
+	a = cos(topSide.Theta);
+	b = sin(topSide.Theta);
+	x0 = a * topSide.Rho;
+	y0 = b * topSide.Rho;
+
+	// load them into CvPoint class
+	pt1.x = cvRound(x0 + 1000*(-b));
+	pt1.y = cvRound(y0 + 1000*(a));
+	pt2.x = cvRound(x0 - 1000*(-b));
+	pt2.y = cvRound(y0 - 1000*(a));
+
+	// draw right side
+	cvLine( image, pt1, pt2, CV_RGB(0,0,255), 3, 8 );
+
+
+	// generate points from the line
+	a = cos(bottomSide.Theta);
+	b = sin(bottomSide.Theta);
+	x0 = a * bottomSide.Rho;
+	y0 = b * bottomSide.Rho;
+
+	// load them into CvPoint class
+	pt1.x = cvRound(x0 + 1000*(-b));
+	pt1.y = cvRound(y0 + 1000*(a));
+	pt2.x = cvRound(x0 - 1000*(-b));
+	pt2.y = cvRound(y0 - 1000*(a));
+
+	// draw right side
+	cvLine( image, pt1, pt2, CV_RGB(255,255,0), 3, 8 );
 }
 
 void RobotVision::CalculatePositionToTarget()

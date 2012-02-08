@@ -78,7 +78,10 @@ void main()
 		robotVision.TransformPass();
 
 		// draw hough lines on filtered image
-		robotVision.DrawHoughLines();
+		//robotVision.DrawHoughLines();
+
+		// draw the rectangle
+		robotVision.DrawRectangle();
 
 		// display the original image with hough lines on top of them
 		if (currentImageView == 1)
