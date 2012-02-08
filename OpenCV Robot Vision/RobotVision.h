@@ -27,6 +27,7 @@ private:
 	CvSeq*				rawLineBuffer;
 	vector<RhoTheta>	lineBuffer;
 	vector<RhoTheta>	filteredLineBuffer;
+	RhoTheta			leftSide, rightSide, topSide, bottomSide;
 
 	int lowThreshold;
 	int highThreshold;
