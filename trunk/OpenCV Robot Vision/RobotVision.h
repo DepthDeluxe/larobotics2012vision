@@ -14,6 +14,28 @@ struct RhoTheta
 	float Theta;
 };
 
+struct SlopeIntercept
+{
+	float Slope;
+	float Intercept;
+};
+
+struct Vector2D
+{
+	float X;
+	float Y;
+};
+
+struct Vector3D
+{
+	float X;
+	float Y;
+	float Z;
+};
+
+SlopeIntercept rvPolarToCartesian(RhoTheta);
+RhoTheta rvCartesianToPolar(SlopeIntercept);
+
 class RobotVision
 {
 	// private members
@@ -28,6 +50,9 @@ private:
 	vector<RhoTheta>	lineBuffer;
 	vector<RhoTheta>	filteredLineBuffer;
 	RhoTheta			leftSide, rightSide, topSide, bottomSide;
+	Vector2D			topLeftPoint, topRightPoint, bottomLeftPoint, bottomRightPoint;
+	Vector2D			rectangleCenterPoint;
+	Vector3D			vectorToTarget;
 
 	int lowThreshold;
 	int highThreshold;
@@ -38,7 +63,7 @@ public:
 	void GetNextFrame();
 	void FilterPass();
 	void TransformPass();
-	void GetRectangleLines();
+	void GetTarget();
 	void CalculatePositionToTarget();
 
 	void SetLowThreshold(int value);

@@ -106,7 +106,7 @@ void main()
 		if (frames%15 == 0)
 		{
 			end = time(NULL);
-			float diffTime = difftime(end, start);
+			float diffTime = (float)difftime(end, start);
 
 			// output framerate
 			cout<< "FPS: " << 1/(diffTime) << endl;
