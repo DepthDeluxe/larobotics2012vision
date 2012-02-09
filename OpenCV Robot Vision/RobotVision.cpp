@@ -1,5 +1,43 @@
 #include "RobotVision.h"
 
+SlopeIntercept rvPolarToCartesian(RhoTheta input)
+{
+	SlopeIntercept out;
+
+	// condition if slope is infinity
+	if (input.Theta == 0)
+	{
+		out.Slope = 500;
+		out.Intercept = input.Rho;
+	}
+	else
+	{
+		out.Slope = tan(input.Theta);
+		out.Intercept = input.Rho * sin(input.Theta) - out.Slope * input.Rho * cos(input.Theta);
+	}
+
+	return out;
+}
+
+RhoTheta rvCartesianToPolar(SlopeIntercept input)
+{
+	RhoTheta out;
+
+	// case if slope is infinite
+	if (input.Slope)
+	{
+		out.Rho = input.Intercept;
+		out.Theta = 0;
+	}
+	else
+	{
+		out.Theta = atan(input.Slope);
+		out.Rho = input.Intercept / (sin(out.Theta) - input.Slope * cos(out.Theta));
+	}
+
+	return out;
+}
+
 RobotVision::RobotVision(int lo, int hi, int hou)
 {
 	lowThreshold = lo;
@@ -61,10 +99,10 @@ void RobotVision::TransformPass()
 	}
 
 	// filter the lines
-	GetRectangleLines();
+	GetTarget();
 }
 
-void RobotVision::GetRectangleLines()
+void RobotVision::GetTarget()
 {
 	// clear filter buffer
 	filteredLineBuffer.clear();
@@ -76,17 +114,17 @@ void RobotVision::GetRectangleLines()
 	bool* isPara = new bool[lineBuffer.size()];
 
 	// if any of the rho values are negative, set them to be +
-	for (int n = 0; n < lineBuffer.size(); n++)
+	for (UINT n = 0; n < lineBuffer.size(); n++)
 	{
 		if (lineBuffer[n].Rho < 0)
 		{
 			lineBuffer[n].Rho = -lineBuffer[n].Rho;
-			lineBuffer[n].Theta -= CV_PI;
+			lineBuffer[n].Theta -= (float)CV_PI;
 		}
 	}
 
-	for (int l1 = 0; l1 < lineBuffer.size(); l1++)
-		for (int l2 = 0; l2 < lineBuffer.size(); l2++)
+	for (UINT l1 = 0; l1 < lineBuffer.size(); l1++)
+		for (UINT l2 = 0; l2 < lineBuffer.size(); l2++)
 		{
 			if (abs(lineBuffer[l1].Theta - lineBuffer[l1].Theta) < 0.2)
 				isPara[l1] = true;
@@ -99,7 +137,7 @@ void RobotVision::GetRectangleLines()
 		}
 
 	// add if perpendicular and parallel lines exist
-	for (int n = 0; n < lineBuffer.size(); n++)
+	for (UINT n = 0; n < lineBuffer.size(); n++)
 	{
 		if (isPerp[n] && isPara[n])
 			filteredLineBuffer.push_back(lineBuffer[n]);
@@ -113,11 +151,11 @@ void RobotVision::GetRectangleLines()
 	vector<RhoTheta> averageFilter = filteredLineBuffer;
 
 	int* numAverages = new int[filteredLineBuffer.size()];
-	for (int n = 0; n < filteredLineBuffer.size(); n++)
+	for (UINT n = 0; n < filteredLineBuffer.size(); n++)
 		numAverages[n] = 1;
 
-	for (int avg = 0; avg < filteredLineBuffer.size(); avg++)
-		for (int comp = 0; comp < filteredLineBuffer.size(); comp++)
+	for (UINT avg = 0; avg < filteredLineBuffer.size(); avg++)
+		for (UINT comp = 0; comp < filteredLineBuffer.size(); comp++)
 		{
 			// if their rho values are similar, average the lines
 			if (abs(averageFilter[avg].Rho - filteredLineBuffer[comp].Rho) < 30
@@ -141,10 +179,10 @@ void RobotVision::GetRectangleLines()
 	bool singlePerp = false;
 	bool valueExists = false;
 
-	for (int l1 = 0; l1 < filteredLineBuffer.size(); l1++)
+	for (UINT l1 = 0; l1 < filteredLineBuffer.size(); l1++)
 	{
 		// do perpendicular line checking
-		for (int comp = 0; comp < filteredLineBuffer.size(); comp++)
+		for (UINT comp = 0; comp < filteredLineBuffer.size(); comp++)
 		{
 			if (abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[comp].Theta) < CV_PI/2 + .25
 				&& abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[comp].Theta) > CV_PI/2 - .25)
@@ -154,7 +192,7 @@ void RobotVision::GetRectangleLines()
 		}
 
 		// look to see if value exists
-		for (int l2 = 0; l2 < averageFilter.size(); l2++)
+		for (UINT l2 = 0; l2 < averageFilter.size(); l2++)
 		{
 			if (abs(filteredLineBuffer[l1].Rho - averageFilter[l2].Rho) < 20
 				&& abs(filteredLineBuffer[l1].Theta - averageFilter[l2].Theta) < 1)
@@ -182,14 +220,16 @@ void RobotVision::GetRectangleLines()
 	if (filteredLineBuffer.size() != 4)
 		return;
 
+	// find horizontal and vertical lines
+	//
 	RhoTheta horizLines[2];
 	RhoTheta vertLines[2];
 
 	int hCount = 0, vCount = 0;
 
-	for (int n = 0; n < filteredLineBuffer.size(); n++)
+	for (UINT n = 0; n < filteredLineBuffer.size(); n++)
 	{
-		if (filteredLineBuffer[n].Theta < 0.2 && hCount < 2)
+		if (filteredLineBuffer[n].Theta < 1 && hCount < 2)
 		{
 			horizLines[hCount] = filteredLineBuffer[n];
 			hCount++;
@@ -201,6 +241,7 @@ void RobotVision::GetRectangleLines()
 		}
 	}
 
+	// from horizontal and vertical lines, determine which one is left and right
 	if (horizLines[0].Rho > horizLines[1].Rho)
 	{
 		rightSide = horizLines[0];
@@ -221,6 +262,33 @@ void RobotVision::GetRectangleLines()
 		topSide = vertLines[0];
 		bottomSide = vertLines[1];
 	}
+
+	// first convert to Cartesian
+	SlopeIntercept lsCartesian, rsCartesian, bsCartesian, tsCartesian;
+	lsCartesian = rvPolarToCartesian(leftSide);
+	rsCartesian = rvPolarToCartesian(rightSide);
+	tsCartesian = rvPolarToCartesian(topSide);
+	bsCartesian = rvPolarToCartesian(bottomSide);
+
+	// and find edge points
+	topLeftPoint.X = (lsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - lsCartesian.Slope);
+	topLeftPoint.X = lsCartesian.Slope * topLeftPoint.X + lsCartesian.Intercept;
+
+	topRightPoint.X = (rsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - rsCartesian.Slope);
+	topRightPoint.Y = rsCartesian.Slope * topRightPoint.X + rsCartesian.Intercept;
+
+	bottomLeftPoint.X = (lsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - lsCartesian.Slope);
+	bottomLeftPoint.Y = lsCartesian.Slope * bottomLeftPoint.X + lsCartesian.Intercept;
+
+	bottomRightPoint.X = (rsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - rsCartesian.Slope);
+	bottomRightPoint.Y = rsCartesian.Slope * bottomRightPoint.X + rsCartesian.Intercept;
+	
+	// find the center of the rectangle by averaging the rectangle points
+	rectangleCenterPoint.X = (topLeftPoint.X + topRightPoint.X) / 2;
+	rectangleCenterPoint.Y = (topLeftPoint.Y + bottomLeftPoint.Y) / 2;
+
+	// resolve distance based on how far away each point is from the center of the rectangle
+
 }
 
 void RobotVision::DrawRectangle()
@@ -290,14 +358,9 @@ void RobotVision::DrawRectangle()
 	cvLine( image, pt1, pt2, CV_RGB(255,255,0), 3, 8 );
 }
 
-void RobotVision::CalculatePositionToTarget()
-{
-
-}
-
 void RobotVision::DrawHoughLines()
 {
-	for (int n = 0; n < filteredLineBuffer.size(); n++)
+	for (UINT n = 0; n < filteredLineBuffer.size(); n++)
 	{
 		// generate points from the line
 		double a = cos(filteredLineBuffer[n].Theta);
