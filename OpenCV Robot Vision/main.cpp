@@ -1,6 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <time.h>
 
 #include <highgui.h>
 #include "RobotVision.h"
@@ -10,7 +9,6 @@ using namespace std;
 // edge detection variables
 int lowThresh = 745;
 int highThresh = 1000;
-int brightThresh = 6200;
 int houghThresh = 100;
 bool threshChanged = false;
 
@@ -55,10 +53,6 @@ void main()
 	cvCreateTrackbar("High Threshold", "OpenCV Window", &highThresh, 2000, highThresholdCallback);
 	cvCreateTrackbar("Hough Threshold", "OpenCV Window", &houghThresh, 250, houghThesholdCallback);
 
-	// init fps calculator
-	int frames = 0;
-	time_t start = 0, end = 0;
-
 	while (key != 'q')
 	{
 		// get next frame
@@ -77,11 +71,9 @@ void main()
 		robotVision.FilterPass();
 		robotVision.TransformPass();
 
-		// draw hough lines on filtered image
-		//robotVision.DrawHoughLines();
-
 		// draw the rectangle
 		robotVision.DrawRectangle();
+		//robotVision.DrawHoughLines();
 
 		// display the original image with hough lines on top of them
 		if (currentImageView == 1)
@@ -99,21 +91,6 @@ void main()
 			currentImageView = 2;
 		else if (key == '3')
 			currentImageView = 3;
-
-		// update fps
-		frames++;
-
-		if (frames%15 == 0)
-		{
-			end = time(NULL);
-			float diffTime = (float)difftime(end, start);
-
-			// output framerate
-			cout<< "FPS: " << 1/(diffTime) << endl;
-
-			// get start time
-			start = time(NULL);
-		}
 	}
 
 	// release objects

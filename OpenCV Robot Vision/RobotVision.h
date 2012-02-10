@@ -33,8 +33,8 @@ struct Vector3D
 	float Z;
 };
 
-SlopeIntercept rvPolarToCartesian(RhoTheta);
-RhoTheta rvCartesianToPolar(SlopeIntercept);
+void rvPolarToCartesian(RhoTheta*, SlopeIntercept*);
+void rvCartesianToPolar(SlopeIntercept*, RhoTheta*);
 
 class RobotVision
 {
