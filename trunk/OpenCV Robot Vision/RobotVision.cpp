@@ -1,41 +1,38 @@
 #include "RobotVision.h"
 
-SlopeIntercept rvPolarToCartesian(RhoTheta input)
+void rvPolarToCartesian(RhoTheta* input, SlopeIntercept* out)
 {
-	SlopeIntercept out;
-
 	// condition if slope is infinity
-	if (input.Theta == 0)
+	if (input->Theta == 0)
 	{
-		out.Slope = 500;
-		out.Intercept = input.Rho;
+		out->Slope = 500;
+		out->Intercept = input->Rho;
+	}
+	else if (input->Theta > CV_PI / 2 && input->Theta < CV_PI)
+	{
+		out->Slope = -1/tan(input->Theta);
+		out->Intercept = input->Rho * sin(input->Theta) - out->Slope * input->Rho * cos(input->Theta);
 	}
 	else
 	{
-		out.Slope = tan(input.Theta);
-		out.Intercept = input.Rho * sin(input.Theta) - out.Slope * input.Rho * cos(input.Theta);
+		out->Slope = -1/tan(input->Theta);
+		out->Intercept = input->Rho * sin(input->Theta) - out->Slope * input->Rho * cos(input->Theta);
 	}
-
-	return out;
 }
 
-RhoTheta rvCartesianToPolar(SlopeIntercept input)
+void rvCartesianToPolar(SlopeIntercept* input, RhoTheta* out)
 {
-	RhoTheta out;
-
 	// case if slope is infinite
-	if (input.Slope)
+	if (input->Slope)
 	{
-		out.Rho = input.Intercept;
-		out.Theta = 0;
+		out->Rho = input->Intercept;
+		out->Theta = 0;
 	}
 	else
 	{
-		out.Theta = atan(input.Slope);
-		out.Rho = input.Intercept / (sin(out.Theta) - input.Slope * cos(out.Theta));
+		out->Theta = atan(input->Slope);
+		out->Rho = input->Intercept / (sin(out->Theta) - input->Slope * cos(out->Theta));
 	}
-
-	return out;
 }
 
 RobotVision::RobotVision(int lo, int hi, int hou)
@@ -104,6 +101,8 @@ void RobotVision::TransformPass()
 
 void RobotVision::GetTarget()
 {
+	filteredLineBuffer = lineBuffer;
+
 	// clear filter buffer
 	filteredLineBuffer.clear();
 
@@ -123,26 +122,16 @@ void RobotVision::GetTarget()
 		}
 	}
 
-	for (UINT l1 = 0; l1 < lineBuffer.size(); l1++)
-		for (UINT l2 = 0; l2 < lineBuffer.size(); l2++)
-		{
-			if (abs(lineBuffer[l1].Theta - lineBuffer[l1].Theta) < 0.2)
-				isPara[l1] = true;
-
-			if (abs(lineBuffer[l1].Theta - lineBuffer[l1].Theta) < CV_PI / 2 + 0.1
-				&& abs(lineBuffer[l1].Theta - lineBuffer[l1].Theta) > CV_PI / 2 - 0.1)
-			{
-				isPerp[l1] = true;
-			}
-		}
-
-	// add if perpendicular and parallel lines exist
+	// check to see if horizontal or vertical lines
 	for (UINT n = 0; n < lineBuffer.size(); n++)
 	{
-		if (isPerp[n] && isPara[n])
+		if ((lineBuffer[n].Theta < CV_PI / 2 + 0.3 && lineBuffer[n].Theta > CV_PI / 2 - 0.3)
+			|| (lineBuffer[n].Theta < 0.3 || lineBuffer[n].Theta > CV_PI * 2 - 0.3))
+		{
 			filteredLineBuffer.push_back(lineBuffer[n]);
+		}
 	}
-
+	
 	// delete pointers related to this filtering
 	delete[] isPerp;
 	delete[] isPara;
@@ -229,7 +218,7 @@ void RobotVision::GetTarget()
 
 	for (UINT n = 0; n < filteredLineBuffer.size(); n++)
 	{
-		if (filteredLineBuffer[n].Theta < 1 && hCount < 2)
+		if ((filteredLineBuffer[n].Theta < 1 || filteredLineBuffer[n].Theta > CV_PI * 2 - 1) && hCount < 2)
 		{
 			horizLines[hCount] = filteredLineBuffer[n];
 			hCount++;
@@ -265,14 +254,14 @@ void RobotVision::GetTarget()
 
 	// first convert to Cartesian
 	SlopeIntercept lsCartesian, rsCartesian, bsCartesian, tsCartesian;
-	lsCartesian = rvPolarToCartesian(leftSide);
-	rsCartesian = rvPolarToCartesian(rightSide);
-	tsCartesian = rvPolarToCartesian(topSide);
-	bsCartesian = rvPolarToCartesian(bottomSide);
+	rvPolarToCartesian(&leftSide, &lsCartesian);
+	rvPolarToCartesian(&rightSide, &rsCartesian);
+	rvPolarToCartesian(&topSide, &tsCartesian);
+	rvPolarToCartesian(&bottomSide, &bsCartesian);
 
 	// and find edge points
 	topLeftPoint.X = (lsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - lsCartesian.Slope);
-	topLeftPoint.X = lsCartesian.Slope * topLeftPoint.X + lsCartesian.Intercept;
+	topLeftPoint.Y = lsCartesian.Slope * topLeftPoint.X + lsCartesian.Intercept;
 
 	topRightPoint.X = (rsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - rsCartesian.Slope);
 	topRightPoint.Y = rsCartesian.Slope * topRightPoint.X + rsCartesian.Intercept;
@@ -286,9 +275,6 @@ void RobotVision::GetTarget()
 	// find the center of the rectangle by averaging the rectangle points
 	rectangleCenterPoint.X = (topLeftPoint.X + topRightPoint.X) / 2;
 	rectangleCenterPoint.Y = (topLeftPoint.Y + bottomLeftPoint.Y) / 2;
-
-	// resolve distance based on how far away each point is from the center of the rectangle
-
 }
 
 void RobotVision::DrawRectangle()
@@ -338,7 +324,7 @@ void RobotVision::DrawRectangle()
 	pt2.x = cvRound(x0 - 1000*(-b));
 	pt2.y = cvRound(y0 - 1000*(a));
 
-	// draw right side
+	// draw top side
 	cvLine( image, pt1, pt2, CV_RGB(0,0,255), 3, 8 );
 
 
@@ -354,8 +340,28 @@ void RobotVision::DrawRectangle()
 	pt2.x = cvRound(x0 - 1000*(-b));
 	pt2.y = cvRound(y0 - 1000*(a));
 
-	// draw right side
+	// draw bottom side
 	cvLine( image, pt1, pt2, CV_RGB(255,255,0), 3, 8 );
+
+	// convert to opencv point formats
+	CvPoint tl, tr, bl, br, center;
+	center.x = (int)rectangleCenterPoint.X;
+	center.y = (int)rectangleCenterPoint.Y;
+	tl.x = (int)topLeftPoint.X;
+	tl.y = (int)topLeftPoint.Y;
+	tr.x = (int)topRightPoint.X;
+	tr.y = (int)topRightPoint.Y;
+	bl.x = (int)bottomLeftPoint.X;
+	bl.y = (int)bottomLeftPoint.Y;
+	br.x = (int)bottomRightPoint.X;
+	br.y = (int)bottomRightPoint.Y;
+
+	// draw points
+	cvCircle(image, center, 10, CV_RGB(255,255,255));
+	cvCircle(image, tl, 5, CV_RGB(255,255,255));
+	cvCircle(image, tr, 5, CV_RGB(255,255,255));
+	cvCircle(image, bl, 5, CV_RGB(255,255,255));
+	cvCircle(image, br, 5, CV_RGB(255,255,255));
 }
 
 void RobotVision::DrawHoughLines()
