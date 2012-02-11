@@ -8,6 +8,13 @@ using namespace std;
 #define RV_DRAW_HOUGH_ON_RAW		1
 #define RV_DRAW_HOUGH_ON_FILTERED	2
 
+#define RV_RECTANGLE_WIDTH			24
+#define RV_RECTANGLE_HEIGHT			16.5
+#define RV_CAMERA_WIDTH				640
+#define RV_CAMERA_HEIGHT			480
+#define RV_CAMERA_FOV_WIDTH_CONST	16421.3
+#define RV_CAMERA_FOV_HEIGHT_CONST	11269.3
+
 struct RhoTheta
 {
 	float Rho;
