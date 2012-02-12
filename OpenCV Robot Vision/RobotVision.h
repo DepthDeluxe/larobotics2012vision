@@ -14,6 +14,7 @@ using namespace std;
 #define RV_CAMERA_HEIGHT			480
 #define RV_CAMERA_FOV_WIDTH_CONST	16421.3
 #define RV_CAMERA_FOV_HEIGHT_CONST	11269.3
+#define RV_CAMERA_SKEW_CONST		-8.3926
 
 struct RhoTheta
 {
@@ -59,6 +60,7 @@ private:
 	RhoTheta			leftSide, rightSide, topSide, bottomSide;
 	Vector2D			topLeftPoint, topRightPoint, bottomLeftPoint, bottomRightPoint;
 	Vector2D			rectangleCenterPoint;
+	float				angleOffset;
 	Vector3D			vectorToTarget;
 
 	int lowThreshold;
