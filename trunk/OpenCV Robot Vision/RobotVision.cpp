@@ -276,13 +276,29 @@ void RobotVision::GetTarget()
 	rectangleCenterPoint.X = (topLeftPoint.X + topRightPoint.X) / 2;
 	rectangleCenterPoint.Y = (topLeftPoint.Y + bottomLeftPoint.Y) / 2;
 
-	// get the relative size of the rectangle in the picture
-	Vector2D rectSize;
-	rectSize.X = (topRightPoint.X - topLeftPoint.X + bottomRightPoint.X - bottomLeftPoint.X) / 2;
-	rectSize.Y = (bottomRightPoint.Y - topRightPoint.Y + bottomLeftPoint.Y - topLeftPoint.Y) / 2;
 
+	// find slope and diff of slope of the lines
+	float topSlope, bottomSlope, diffSlope;
+	topSlope = (topRightPoint.Y - topLeftPoint.Y) / (topRightPoint.X - topLeftPoint.X);
+	bottomSlope = (bottomRightPoint.Y - bottomLeftPoint.Y) / (bottomRightPoint.X - bottomLeftPoint.X);
+	diffSlope = bottomSlope - topSlope;
+
+	// find offset angle with small angle approximation
+	angleOffset = RV_CAMERA_SKEW_CONST * diffSlope;
+
+	// get the adjusted width of the rectangle for distance calculation
+	float relativeWidth = (sqrt(pow(topRightPoint.X - topLeftPoint.X,2) + pow(topRightPoint.Y - topLeftPoint.Y,2))
+							+ sqrt(pow(bottomRightPoint.X - bottomLeftPoint.X,2) + pow(bottomRightPoint.Y - bottomLeftPoint.Y,2))) / 2;
+	float actualWidth = relativeWidth / cos(angleOffset);
+
+	vectorToTarget.Z = RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
+
+	// get the relative size of the rectangle in the picture
+	//Vector2D rectSize;
+	//rectSize.X = (topRightPoint.X - topLeftPoint.X + bottomRightPoint.X - bottomLeftPoint.X) / 2;
+	//rectSize.Y = (bottomRightPoint.Y - topRightPoint.Y + bottomLeftPoint.Y - topLeftPoint.Y) / 2;
 	// derive distance from the frame height, becuase that doesn't really change
-	vectorToTarget.Z = (RV_CAMERA_FOV_WIDTH_CONST / rectSize.X + RV_CAMERA_FOV_HEIGHT_CONST / rectSize.Y) / 2;
+	//vectorToTarget.Z = (RV_CAMERA_FOV_WIDTH_CONST / rectSize.X + RV_CAMERA_FOV_HEIGHT_CONST / rectSize.Y) / 2;
 }
 
 void RobotVision::DrawRectangle()
@@ -372,7 +388,7 @@ void RobotVision::DrawRectangle()
 	cvCircle(image, br, 5, CV_RGB(255,255,255));
 
 	// draw fonts telling what each point is
-	char displayText[15];
+	char displayText[50];
 	CvFont font = cvFont(1, 1);
 	
 	strcpy(&displayText[0], "tl");
@@ -388,7 +404,11 @@ void RobotVision::DrawRectangle()
 	cvPutText(image, &displayText[0], br, &font, CV_RGB(255,255,255));
 
 	// draw distance on screen
-	itoa(vectorToTarget.Z, &displayText[0], 10);
+	//itoa(vectorToTarget.Z, &displayText[0], 10);
+	//cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
+
+	angleOffset *= 180/CV_PI;
+	sprintf(&displayText[0], "%f", angleOffset);
 	cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
 }
 
