@@ -403,13 +403,19 @@ void RobotVision::DrawRectangle()
 	strcpy(&displayText[0], "br");
 	cvPutText(image, &displayText[0], br, &font, CV_RGB(255,255,255));
 
-	// draw distance on screen
-	//itoa(vectorToTarget.Z, &displayText[0], 10);
-	//cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
+	// draw distance on screen on middle of rectangle
+	itoa(vectorToTarget.Z, &displayText[0], 10);
+	cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
 
+	// convert offset angle to deg and save in text buffer
 	angleOffset *= 180/CV_PI;
 	sprintf(&displayText[0], "%f", angleOffset);
-	cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
+
+	// print offset in bottom left of screen
+	CvPoint tempPt;
+	tempPt.x = 5;
+	tempPt.y = 470;
+	cvPutText(image, &displayText[0], tempPt, &font, CV_RGB(255,255,0));
 }
 
 void RobotVision::DrawHoughLines()
