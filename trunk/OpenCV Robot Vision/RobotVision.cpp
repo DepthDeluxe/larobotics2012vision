@@ -285,13 +285,10 @@ void RobotVision::GetTarget()
 
 	// find offset angle with small angle approximation
 	angleOffset = RV_CAMERA_SKEW_CONST * diffSlope;
-
-	// get the adjusted width of the rectangle for distance calculation
-	float relativeWidth = (sqrt(pow(topRightPoint.X - topLeftPoint.X,2) + pow(topRightPoint.Y - topLeftPoint.Y,2))
-							+ sqrt(pow(bottomRightPoint.X - bottomLeftPoint.X,2) + pow(bottomRightPoint.Y - bottomLeftPoint.Y,2))) / 2;
+	
+	float relativeWidth = bottomRightPoint.X - bottomLeftPoint.X;
 	float actualWidth = relativeWidth / cos(angleOffset);
-
-	vectorToTarget.Z = RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
+	distanceToTarget = RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
 }
 
 void RobotVision::DrawRectangle()
@@ -396,12 +393,14 @@ void RobotVision::DrawRectangle()
 	cvPutText(image, &displayText[0], br, &font, CV_RGB(255,255,255));
 
 	// draw distance on screen on middle of rectangle
-	itoa(vectorToTarget.Z, &displayText[0], 10);
+	//itoa(distanceToTarget, &displayText[0], 10);
+	sprintf(&displayText[0], "%f", distanceToTarget);
 	cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
 
 	// convert offset angle to deg and save in text buffer
-	angleOffset *= 180/CV_PI;
-	sprintf(&displayText[0], "%f", angleOffset);
+	//angleOffset *= (float)180/CV_PI;
+	float convertedOffset = angleOffset * 180/CV_PI;
+	sprintf(&displayText[0], "%f", convertedOffset);
 
 	// print offset in bottom left of screen
 	CvPoint tempPt;
