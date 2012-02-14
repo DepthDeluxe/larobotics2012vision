@@ -61,7 +61,7 @@ private:
 	Vector2D			topLeftPoint, topRightPoint, bottomLeftPoint, bottomRightPoint;
 	Vector2D			rectangleCenterPoint;
 	float				angleOffset;
-	Vector3D			vectorToTarget;
+	float				distanceToTarget;
 
 	int lowThreshold;
 	int highThreshold;
