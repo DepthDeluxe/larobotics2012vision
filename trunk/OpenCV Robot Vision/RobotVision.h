@@ -51,8 +51,6 @@ private:
 	CvCapture*	camera;
 	IplImage*	image;
 	IplImage*	image_gray;
-	//IplImage*	binaryFilteredImage;
-	//IplImage*	contouredImage;
 	IplImage*	cannyImage;
 
 	CvMemStorage*		storage;

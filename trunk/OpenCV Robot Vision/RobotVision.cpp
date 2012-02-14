@@ -292,13 +292,6 @@ void RobotVision::GetTarget()
 	float actualWidth = relativeWidth / cos(angleOffset);
 
 	vectorToTarget.Z = RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
-
-	// get the relative size of the rectangle in the picture
-	//Vector2D rectSize;
-	//rectSize.X = (topRightPoint.X - topLeftPoint.X + bottomRightPoint.X - bottomLeftPoint.X) / 2;
-	//rectSize.Y = (bottomRightPoint.Y - topRightPoint.Y + bottomLeftPoint.Y - topLeftPoint.Y) / 2;
-	// derive distance from the frame height, becuase that doesn't really change
-	//vectorToTarget.Z = (RV_CAMERA_FOV_WIDTH_CONST / rectSize.X + RV_CAMERA_FOV_HEIGHT_CONST / rectSize.Y) / 2;
 }
 
 void RobotVision::DrawRectangle()
@@ -350,7 +343,6 @@ void RobotVision::DrawRectangle()
 
 	// draw top side
 	cvLine( image, pt1, pt2, CV_RGB(0,0,255), 3, 8 );
-
 
 	// generate points from the line
 	a = cos(bottomSide.Theta);
