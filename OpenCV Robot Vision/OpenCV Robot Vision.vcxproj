@@ -84,11 +84,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="LookupTable.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RobotVision.cpp" />
     <ClCompile Include="RobotVisionNetworking.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="LookupTable.h" />
     <ClInclude Include="RobotVision.h" />
     <ClInclude Include="RobotVisionNetworking.h" />
   </ItemGroup>
