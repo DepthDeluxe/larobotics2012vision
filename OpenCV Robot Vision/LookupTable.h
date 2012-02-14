@@ -4,8 +4,8 @@ using namespace std;
 struct LookupTableMember
 {
 	// position variables
-	int		X;
-	int		Y;
+	float	Distance;
+	float	Offset;
 
 	// actual data
 	float	Speed;
