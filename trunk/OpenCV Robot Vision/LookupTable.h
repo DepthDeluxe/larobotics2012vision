@@ -5,20 +5,21 @@ struct LookupTableMember
 {
 	// position variables
 	float	Distance;
-	float	Offset;
+	float	AngleOffset;
 
 	// actual data
 	float	Speed;
 	float	Tilt;
+	float	PanOffset;
 };
 
 class LookupTable
 {
 private:
-	char*			m_filename;
-	ifstream		file;
-	LookupTable*	table;
-	int				tableSize;
+	char*					m_filename;
+	ifstream				file;
+	LookupTableMember*		lookupTable;
+	int						lookupTableSize;
 
 public:
 	LookupTable(char* filename);
