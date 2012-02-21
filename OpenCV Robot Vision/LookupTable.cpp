@@ -5,7 +5,7 @@
 LookupTable::LookupTable(char* filename)
 {
 	// init variables
-	tableSize = 0;
+	lookupTableSize = 0;
 	m_filename = filename;
 
 	// check to see if file exists
@@ -15,18 +15,47 @@ LookupTable::LookupTable(char* filename)
 		cout<<"Could not open lookup table with name: " << filename << "!" << endl;
 	}
 
-	// dig through file to find number of members
-	int memberCount = 0;
+	// read first line to get header information
+	char* readBuffer = new char[100];
+	file.getline(readBuffer, 100);
 
-	for (int memberCount = 0; !file.eof(); memberCount++)
+	char* itemBuffer = new char[10];
+
+	for (; atoi(itemBuffer) != (INT_MAX | INT_MIN);)
+		itemBuffer = strtok(readBuffer, ",");
+
+	// convert to int
+	lookupTableSize = atoi(itemBuffer);
+
+	// allocate memory for lookup table
+	lookupTable = new LookupTableMember[lookupTableSize];
+
+	// fill table with values
+	for (int n = 0; n < lookupTableSize; n++)
 	{
+		file.getline(readBuffer, 100);
+
+		itemBuffer = strtok(readBuffer, ",");
+		lookupTable[n].Distance = atof(itemBuffer);
+
+		itemBuffer = strtok(readBuffer, ",");
+		lookupTable[n].AngleOffset = atof(itemBuffer);
+
+		itemBuffer = strtok(readBuffer, ",");
+		lookupTable[n].Speed = atof(itemBuffer);
+
+		itemBuffer = strtok(readBuffer, ",");
+		lookupTable[n].Tilt = atof(itemBuffer);
+
+		itemBuffer = strtok(readBuffer, ",");
+		lookupTable[n].PanOffset = atof(itemBuffer);
 	}
 }
 
 void LookupTable::FindShootingParams(LookupTableMember* member)
 {
 	// given the X and Y values in the member table, look for the member
-	for (int n = 0; n < tableSize; n++)
+	for (int n = 0; n < lookupTableSize; n++)
 	{
 
 	}
