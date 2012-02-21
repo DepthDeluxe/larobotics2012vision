@@ -393,12 +393,10 @@ void RobotVision::DrawRectangle()
 	cvPutText(image, &displayText[0], br, &font, CV_RGB(255,255,255));
 
 	// draw distance on screen on middle of rectangle
-	//itoa(distanceToTarget, &displayText[0], 10);
 	sprintf(&displayText[0], "%f", distanceToTarget);
 	cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
 
 	// convert offset angle to deg and save in text buffer
-	//angleOffset *= (float)180/CV_PI;
 	float convertedOffset = angleOffset * 180/CV_PI;
 	sprintf(&displayText[0], "%f", convertedOffset);
 
