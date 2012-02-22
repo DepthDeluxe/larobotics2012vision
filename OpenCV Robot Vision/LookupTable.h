@@ -15,15 +15,15 @@ struct LookupTableMember
 
 class LookupTable
 {
-private:
-	char*					m_filename;
-	ifstream				file;
-	LookupTableMember*		lookupTable;
-	int						lookupTableSize;
-
 public:
 	LookupTable(char* filename);
 
 	// runtime logic
 	void FindShootingParams(LookupTableMember*);
+
+private:
+	char*					m_filename;
+	ifstream				file;
+	LookupTableMember*		lookupTable;
+	int						lookupTableSize;
 };

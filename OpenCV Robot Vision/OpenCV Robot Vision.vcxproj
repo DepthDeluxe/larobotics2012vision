@@ -39,10 +39,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <ExecutablePath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\bin;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\include\opencv;C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\src\cv;C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\src\ml;C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\src\highgui;C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\src\cxcore;C:\Users\Colin\Documents\Programming SDKs\OpenCV2.1\src\cvaux;$(SourcePath)</SourcePath>
+    <ExecutablePath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.3\bin;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.3\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.3\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\Users\Colin\Documents\Programming SDKs\OpenCV2.3\modules;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>cv210d.lib;cxcore210d.lib;highgui210d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_video231d.lib;opencv_objdetect231d.lib;opencv_ml231d.lib;opencv_legacy231d.lib;opencv_imgproc231d.lib;opencv_highgui231d.lib;opencv_features2d231d.lib;opencv_core231d.lib;opencv_contrib231d.lib;opencv_calib3d231d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
