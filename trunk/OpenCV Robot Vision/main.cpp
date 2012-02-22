@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <highgui.h>
+#include <opencv/highgui.h>
 #include "RobotVision.h"
 
 using namespace std;
