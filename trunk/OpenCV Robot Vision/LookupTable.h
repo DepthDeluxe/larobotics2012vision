@@ -1,17 +1,23 @@
 #include <fstream>
 using namespace std;
 
-struct LookupTableMember
+struct LookupTableInput
 {
-	// position variables
-	float	Distance;
-	float	AngleOffset;
+	float Distance;
+	float AngleOffset;
+};
 
-	// actual data
+struct LookupTableOutput
+{
 	float	Speed;
 	float	Tilt;
 	float	PanOffset;
 };
+
+// this has both input and output values
+struct LookupTableSlot
+	: public LookupTableInput, public LookupTableOutput
+{};
 
 class LookupTable
 {
@@ -19,11 +25,13 @@ public:
 	LookupTable(char* filename);
 
 	// runtime logic
-	void FindShootingParams(LookupTableMember*);
+	LookupTableOutput* FindShootingParams(LookupTableInput*);
+
+	int GetTableSize();
 
 private:
 	char*					m_filename;
 	ifstream				file;
-	LookupTableMember*		lookupTable;
+	LookupTableSlot*		lookupTable;
 	int						lookupTableSize;
 };
