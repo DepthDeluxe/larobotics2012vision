@@ -49,7 +49,7 @@ void TrimToAspectRatio(vector<Rect> &rect, float ratio, float errorVal)
 	vector<Rect> result;
 	for (unsigned int i = 0; i < rect.size(); i++)
 	{
-		currentRatio = (rect[i].width) / (rect[i].height);
+		currentRatio = (float)(rect[i].width) / (float)(rect[i].height);
 		if (fabs(ratio - currentRatio) < errorVal)
 			result.push_back(rect[i]);
 	}
