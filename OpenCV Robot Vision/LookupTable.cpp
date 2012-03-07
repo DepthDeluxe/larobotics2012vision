@@ -28,7 +28,7 @@ LookupTable::LookupTable(char* filename)
 	lookupTableSize = atoi(itemBuffer);
 
 	// allocate memory for lookup table
-	lookupTable = new LookupTableMember[lookupTableSize];
+	lookupTable = new LookupTableSlot[lookupTableSize];
 
 	// fill table with values
 	for (int n = 0; n < lookupTableSize; n++)
@@ -36,27 +36,34 @@ LookupTable::LookupTable(char* filename)
 		file.getline(readBuffer, 100);
 
 		itemBuffer = strtok(readBuffer, ",");
-		lookupTable[n].Distance = atof(itemBuffer);
+		lookupTable[n].Distance = (float)atof(itemBuffer);
 
 		itemBuffer = strtok(readBuffer, ",");
-		lookupTable[n].AngleOffset = atof(itemBuffer);
+		lookupTable[n].AngleOffset = (float)atof(itemBuffer);
 
 		itemBuffer = strtok(readBuffer, ",");
-		lookupTable[n].Speed = atof(itemBuffer);
+		lookupTable[n].Speed = (float)atof(itemBuffer);
 
 		itemBuffer = strtok(readBuffer, ",");
-		lookupTable[n].Tilt = atof(itemBuffer);
+		lookupTable[n].Tilt = (float)atof(itemBuffer);
 
 		itemBuffer = strtok(readBuffer, ",");
-		lookupTable[n].PanOffset = atof(itemBuffer);
+		lookupTable[n].PanOffset = (float)atof(itemBuffer);
 	}
 }
 
-void LookupTable::FindShootingParams(LookupTableMember* member)
+LookupTableOutput* LookupTable::FindShootingParams(LookupTableInput* input)
 {
 	// given the X and Y values in the member table, look for the member
 	for (int n = 0; n < lookupTableSize; n++)
 	{
 
 	}
+
+	return &lookupTable[0];
+}
+
+int LookupTable::GetTableSize()
+{
+	return lookupTableSize;
 }
