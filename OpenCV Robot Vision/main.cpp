@@ -6,11 +6,14 @@
 
 using namespace std;
 
-// edge detection variables
+// changable values
+// default is to change them on runtime so variables
+// can change
 int lowThresh = 745;
 int highThresh = 1000;
 int houghThresh = 100;
-bool threshChanged = false;
+int binaryThresh = 197;
+bool threshChanged = true;
 
 int currentImageView = 1;
 
@@ -35,6 +38,12 @@ void houghThesholdCallback(int value)
 	threshChanged = true;
 }
 
+void binaryThresholdCallback(int value)
+{
+	binaryThresh = value;
+	threshChanged = true;
+}
+
 void main()
 {
 	// load file
@@ -52,6 +61,7 @@ void main()
 	cvCreateTrackbar("Low Threshold", "OpenCV Window", &lowThresh, 2000, lowThresholdCallback);
 	cvCreateTrackbar("High Threshold", "OpenCV Window", &highThresh, 2000, highThresholdCallback);
 	cvCreateTrackbar("Hough Threshold", "OpenCV Window", &houghThresh, 250, houghThesholdCallback);
+	cvCreateTrackbar("Binary Threshold", "OpenCV Window", &binaryThresh, 255, binaryThresholdCallback);
 
 	while (key != 'q')
 	{
@@ -64,24 +74,28 @@ void main()
 			robotVision.SetLowThreshold(lowThresh);
 			robotVision.SetHighThreshold(highThresh);
 			robotVision.SetHoughThreshold(houghThresh);
+			robotVision.SetBinaryThreshold(binaryThresh);
 			threshChanged = false;
 		}
 
-		// do filter and transform pass
-		robotVision.FilterPass();
-		robotVision.TransformPass();
-
 		// draw the rectangle
-		robotVision.DrawRectangle();
+		//robotVision.DrawRectangle();
 		//robotVision.DrawHoughLines();
+
+		robotVision.ThresholdPass();
+		robotVision.GetRegionOfInterest();
+		robotVision.TransformPass();
+		robotVision.DrawRectangle();
+		//robotVision.DrawRegionOfInterest();
+		robotVision.DrawImportantRectangles();
 
 		// display the original image with hough lines on top of them
 		if (currentImageView == 1)
 			cvShowImage("OpenCV Window", robotVision.GetRawImage());
 		else if (currentImageView == 2)
-			cvShowImage("OpenCV Window", robotVision.GetFilteredImage());
+			cvShowImage("OpenCV Window", robotVision.GetThresholdImage());
 		else if (currentImageView == 3)
-			cvShowImage("OpenCV Window", robotVision.GetGrayImage());
+			cvShowImage("OpenCV Window", robotVision.GetRegionOfInterestImage());
 
 		key = cvWaitKey(20);
 

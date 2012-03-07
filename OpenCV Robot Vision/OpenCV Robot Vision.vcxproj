@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opencv_video231d.lib;opencv_objdetect231d.lib;opencv_ml231d.lib;opencv_legacy231d.lib;opencv_imgproc231d.lib;opencv_highgui231d.lib;opencv_features2d231d.lib;opencv_core231d.lib;opencv_contrib231d.lib;opencv_calib3d231d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_video231d.lib;opencv_objdetect231d.lib;opencv_ml231d.lib;opencv_legacy231d.lib;opencv_imgproc231d.lib;opencv_highgui231d.lib;opencv_features2d231d.lib;opencv_core231d.lib;opencv_contrib231d.lib;opencv_calib3d231d.lib;opencv_flann231d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,12 +84,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ContourTracker.cpp" />
     <ClCompile Include="LookupTable.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RobotVision.cpp" />
     <ClCompile Include="RobotVisionNetworking.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ContourTracker.h" />
     <ClInclude Include="LookupTable.h" />
     <ClInclude Include="RobotVision.h" />
     <ClInclude Include="RobotVisionNetworking.h" />
