@@ -60,13 +60,8 @@ public:
 	void Initialize();
 
 	void GetNextFrame();
-	//void DetectRectangle();
-	//void LineAnalysis();
-
-	void GetRegionOfInterest();
-	void ThresholdPass();
-	void TransformPass();
-	void CalculatePositionToTarget();
+	void DetectRectangle();
+	void LineAnalysis();
 
 	void SetLowThreshold(int value);
 	void SetHighThreshold(int value);
@@ -90,8 +85,8 @@ private:
 	CvCapture*	camera;
 	IplImage*	image;
 	IplImage*	image_gray;
-	IplImage*	regionOfInterestImage;
-	IplImage*	thresholdImage;
+	IplImage*	image_roi;
+	IplImage*	image_threshold;
 
 	// variables for sammy's finder
 	Mat*			matThresholdImage;

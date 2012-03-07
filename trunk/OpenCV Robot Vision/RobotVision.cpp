@@ -51,7 +51,7 @@ void RobotVision::Initialize()
 	// initialize variables
 	image = cvQueryFrame(camera);
 	image_gray = cvCreateImage(cvGetSize(image), image->depth, 1);
-	thresholdImage = cvCreateImage(cvGetSize(image), image->depth, 1);
+	image_threshold = cvCreateImage(cvGetSize(image), image->depth, 1);
 
 	matThresholdImage = new Mat(image);
 
@@ -73,19 +73,25 @@ void RobotVision::GetNextFrame()
 	//cvEqualizeHist(image_gray, image_gray);
 }
 
-void RobotVision::GetRegionOfInterest()
+void RobotVision::DetectRectangle()
 {
+	// filter gray image
+	////////////////////
+	cvThreshold(image_gray, image_threshold, binaryThreshold, 255, CV_THRESH_BINARY);
+
+	// perform contour detection
+	////////////////////////////
 	CvSize size;
 	size.width = 640;
 	size.height = 480;
 
 	IplImage* copiedImage = cvCreateImage(size, image->depth, 1);
-	cvCopy(thresholdImage, copiedImage);
+	cvCopy(image_threshold, copiedImage);
 	matThresholdImage = new Mat(copiedImage);
 
 	// find the polygons
 	importantRectangles = FindPoly(*matThresholdImage, 4, HAWK_MAX_SIDES, HAWK_MIN_AREA - 25, HAWK_MAX_AREA + 6000);
-	TrimToAspectRatio(importantRectangles, RV_RECTANGLE_WIDTH/RV_RECTANGLE_HEIGHT, HAWK_AS_ERROR);
+	TrimToAspectRatio(importantRectangles, (float)(RV_RECTANGLE_WIDTH/RV_RECTANGLE_HEIGHT), (float)HAWK_AS_ERROR);
 
 	int targetNum = NestedTarget(importantRectangles, *matThresholdImage, 4, HAWK_MAX_SIDES, HAWK_MIN_AREA - 25, HAWK_MAX_AREA + 6000);
 	if (targetNum >= 0)
@@ -102,16 +108,11 @@ void RobotVision::GetRegionOfInterest()
 		Rect cropRect(targetRectangle.x - 10, targetRectangle.y - 10, targetRectangle.width + 20, targetRectangle.height + 20);
 
 		Mat matImage = Mat(image_gray);
-		regionOfInterestImage = new IplImage(matImage(cropRect));
+		image_roi = new IplImage(matImage(cropRect));
 	}
 }
 
-void RobotVision::ThresholdPass()
-{
-	cvThreshold(image_gray, thresholdImage, binaryThreshold, 255, CV_THRESH_BINARY);
-}
-
-void RobotVision::TransformPass()
+void RobotVision::LineAnalysis()
 {
 	// don't run anything if new target hasn't been found
 	if (!trackingTarget)
@@ -119,11 +120,13 @@ void RobotVision::TransformPass()
 
 	trackingTarget = false;
 
-	// do canny
-	cvCanny(regionOfInterestImage, regionOfInterestImage, lowThreshold, highThreshold, 3);
+	// do canny filtering
+	/////////////////////
+	cvCanny(image_roi, image_roi, lowThreshold, highThreshold, 3);
 
-	// do standard hough transform
-	rawLineBuffer = cvHoughLines2(regionOfInterestImage, storage, CV_HOUGH_STANDARD, 1, CV_PI / (180*2), houghThreshold);
+	// do standard hough transform and line analysis
+	////////////////////////////////////////////////
+	rawLineBuffer = cvHoughLines2(image_roi, storage, CV_HOUGH_STANDARD, 1, CV_PI / (180*2), houghThreshold);
 
 	// clear lineBuffer
 	lineBuffer.clear();
@@ -333,11 +336,11 @@ void RobotVision::TransformPass()
 		diffSlope = bottomSlope - topSlope;
 
 		// find offset angle with small angle approximation
-		angleOffset = RV_CAMERA_SKEW_CONST * diffSlope;
+		angleOffset = (float)RV_CAMERA_SKEW_CONST * diffSlope;
 
 		float relativeWidth = bottomRightPoint.X - bottomLeftPoint.X;
 		float actualWidth = relativeWidth / cos(angleOffset);
-		distanceToTarget = RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
+		distanceToTarget = (float)RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
 }
 
 #pragma region DRAW_FUNCTIONS
@@ -447,7 +450,7 @@ void RobotVision::DrawRectangle()
 	cvPutText(image, &displayText[0], center, &font, CV_RGB(255,255,0));
 
 	// convert offset angle to deg and save in text buffer
-	float convertedOffset = angleOffset * 180/CV_PI;
+	float convertedOffset = (float)(angleOffset * 180/CV_PI);
 	sprintf(&displayText[0], "%f", convertedOffset);
 
 	// print offset in bottom left of screen
@@ -551,12 +554,12 @@ IplImage* RobotVision::GetGrayImage()
 
 IplImage* RobotVision::GetRegionOfInterestImage()
 {
-	return regionOfInterestImage;
+	return image_roi;
 }
 
 IplImage* RobotVision::GetThresholdImage()
 {
-	return thresholdImage;
+	return image_threshold;
 }
 #pragma endregion
 
@@ -565,6 +568,6 @@ void RobotVision::Dispose()
 	// dispose of all opencv objects
 	cvReleaseCapture(&camera);
 	cvReleaseImage(&image_gray);
-	cvReleaseImage(&thresholdImage);
+	cvReleaseImage(&image_threshold);
 	cvReleaseMemStorage(&storage);
 }
