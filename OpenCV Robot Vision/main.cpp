@@ -6,7 +6,7 @@
 
 using namespace std;
 
-// changable values
+// changeable values
 // default is to change them on runtime so variables
 // can change
 int lowThresh = 745;
@@ -78,13 +78,10 @@ void main()
 			threshChanged = false;
 		}
 
-		// draw the rectangle
-		//robotVision.DrawRectangle();
-		//robotVision.DrawHoughLines();
+		robotVision.DetectRectangle();
+		robotVision.LineAnalysis();
 
-		robotVision.ThresholdPass();
-		robotVision.GetRegionOfInterest();
-		robotVision.TransformPass();
+		// draw functions
 		robotVision.DrawRectangle();
 		//robotVision.DrawRegionOfInterest();
 		robotVision.DrawImportantRectangles();
@@ -125,17 +122,22 @@ void SaveData()
 	save.open("SaveData.txt", ios::out | ios::trunc);
 
 	// write low threshold
-	itoa(lowThresh, saveBuffer, 10);
+	_itoa(lowThresh, saveBuffer, 10);
 	save.write(saveBuffer, strlen(saveBuffer));
 	save.write("\n", 1);
 
 	// write high threshold
-	itoa(highThresh, saveBuffer, 10);
+	_itoa(highThresh, saveBuffer, 10);
 	save.write(saveBuffer, strlen(saveBuffer));
 	save.write("\n", 1);
 
 	// write hough threshold
-	itoa(houghThresh, saveBuffer, 10);
+	_itoa(houghThresh, saveBuffer, 10);
+	save.write(saveBuffer, strlen(saveBuffer));
+	save.write("\n", 1);
+
+	// write binary threshold
+	_itoa(binaryThresh, saveBuffer, 10);
 	save.write(saveBuffer, strlen(saveBuffer));
 	save.write("\n", 1);
 
@@ -167,6 +169,10 @@ void LoadData()
 	// get houghThreshold
 	load.getline(loadBuffer, 10);
 	houghThresh = atoi(loadBuffer);
+
+	// get binaryThreshold
+	load.getline(loadBuffer, 10);
+	binaryThresh = atoi(loadBuffer);
 
 	load.close();
 
