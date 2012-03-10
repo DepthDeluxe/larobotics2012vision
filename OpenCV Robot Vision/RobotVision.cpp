@@ -109,21 +109,23 @@ void RobotVision::DetectRectangle()
 		targetRectangle = importantRectangles[targetNum];
 		trackingTarget = true;
 	}
-	else
-		trackingTarget = false;
 
 	// crop the image only when it is within bounds of frame
 	if (targetRectangle.x > 10 && targetRectangle.y > 10 &&
 		targetRectangle.x + targetRectangle.width < 640 &&
 		targetRectangle.y + targetRectangle.height < 480 &&
+		targetRectangle.width > 0 && targetRectangle.height > 0 &&
 		targetRectangle.width < 620 && targetRectangle.height < 460 &&
 		trackingTarget)
 	{
 		Rect cropRect(targetRectangle.x - 10, targetRectangle.y - 10, targetRectangle.width + 20, targetRectangle.height + 20);
 
 		Mat matImage = Mat(image_gray);
-		image_roi = new IplImage(matImage(cropRect));
+		matImage = matImage(cropRect);
+		image_roi = new IplImage(matImage);
 	}
+	else
+		trackingTarget = false;
 
 	// free memory resources
 	cvReleaseImage(&copiedImage);
@@ -135,7 +137,7 @@ void RobotVision::LineAnalysis()
 	if (!trackingTarget)
 		return;
 
-	cout<<"performing line analysis"<<endl;
+	cout<<"performing line analysis..."<<endl;
 
 	trackingTarget = false;
 
