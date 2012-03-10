@@ -96,7 +96,6 @@ private:
 	CvMemStorage*		storage;
 	CvSeq*				rawLineBuffer;
 	vector<RhoTheta>	lineBuffer;
-	vector<RhoTheta>	filteredLineBuffer;
 	RhoTheta			leftSide, rightSide, topSide, bottomSide;
 	Vector2D			topLeftPoint, topRightPoint, bottomLeftPoint, bottomRightPoint;
 	Vector2D			rectangleCenterPoint;

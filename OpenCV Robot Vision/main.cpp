@@ -54,14 +54,15 @@ void main()
 	robotVision.Initialize();
 
 	// make windows
-	cvNamedWindow("OpenCV Window", 1);
+	cvNamedWindow("OpenCV Window");
+	cvNamedWindow("Adjustment Window");
 	int key = 0;
 
 	// create trackbars for thresholding
-	cvCreateTrackbar("Low Threshold", "OpenCV Window", &lowThresh, 2000, lowThresholdCallback);
-	cvCreateTrackbar("High Threshold", "OpenCV Window", &highThresh, 2000, highThresholdCallback);
-	cvCreateTrackbar("Hough Threshold", "OpenCV Window", &houghThresh, 250, houghThesholdCallback);
-	cvCreateTrackbar("Binary Threshold", "OpenCV Window", &binaryThresh, 255, binaryThresholdCallback);
+	cvCreateTrackbar("Low Threshold", "Adjustment Window", &lowThresh, 2000, lowThresholdCallback);
+	cvCreateTrackbar("High Threshold", "Adjustment Window", &highThresh, 2000, highThresholdCallback);
+	cvCreateTrackbar("Hough Threshold", "Adjustment Window", &houghThresh, 250, houghThesholdCallback);
+	cvCreateTrackbar("Binary Threshold", "Adjustment Window", &binaryThresh, 255, binaryThresholdCallback);
 
 	while (key != 'q')
 	{
@@ -106,6 +107,7 @@ void main()
 
 	// release objects
 	cvDestroyWindow("OpenCV Window");
+	cvDestroyWindow("Adjustment Window");
 	robotVision.Dispose();
 
 	// save file
