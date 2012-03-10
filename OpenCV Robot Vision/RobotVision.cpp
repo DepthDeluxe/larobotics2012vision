@@ -1,6 +1,9 @@
 #include "RobotVision.h"
 #include "ContourTracker.h"
 
+#include <iostream>
+using namespace std;
+
 void rvPolarToCartesian(RhoTheta* input, SlopeIntercept* out)
 {
 	// condition if slope is infinity
@@ -34,6 +37,14 @@ void rvCartesianToPolar(SlopeIntercept* input, RhoTheta* out)
 		out->Theta = atan(input->Slope);
 		out->Rho = input->Intercept / (sin(out->Theta) - input->Slope * cos(out->Theta));
 	}
+}
+
+void rvRotateImage(IplImage* image)
+{
+	Mat matImage(image);
+	Point2f centerPoint(640/2, 480/2);
+	matImage = getRotationMatrix2D(centerPoint, 90, 1.0);
+	*image = matImage;
 }
 
 RobotVision::RobotVision(int lo, int hi, int hou)
@@ -72,6 +83,8 @@ void RobotVision::GetNextFrame()
 
 void RobotVision::DetectRectangle()
 {
+	cout<<"detecting rectangle..."<<endl;
+
 	// filter gray image
 	////////////////////
 	cvThreshold(image_gray, image_threshold, binaryThreshold, 255, CV_THRESH_BINARY);
@@ -103,6 +116,7 @@ void RobotVision::DetectRectangle()
 	if (targetRectangle.x > 10 && targetRectangle.y > 10 &&
 		targetRectangle.x + targetRectangle.width < 640 &&
 		targetRectangle.y + targetRectangle.height < 480 &&
+		targetRectangle.width < 620 && targetRectangle.height < 460 &&
 		trackingTarget)
 	{
 		Rect cropRect(targetRectangle.x - 10, targetRectangle.y - 10, targetRectangle.width + 20, targetRectangle.height + 20);
@@ -120,6 +134,8 @@ void RobotVision::LineAnalysis()
 	// don't run anything if new target hasn't been found
 	if (!trackingTarget)
 		return;
+
+	cout<<"performing line analysis"<<endl;
 
 	trackingTarget = false;
 
@@ -160,16 +176,6 @@ void RobotVision::LineAnalysis()
 			lineBuffer[n].Theta -= (float)CV_PI;
 		}
 	}
-
-	// check to see if horizontal or vertical lines
-	//for (UINT n = 0; n < lineBuffer.size(); n++)
-	//{
-	//	if ((lineBuffer[n].Theta < CV_PI / 2 + 0.3 && lineBuffer[n].Theta > CV_PI / 2 - 0.3)
-	//		|| (lineBuffer[n].Theta < 0.3 || lineBuffer[n].Theta > CV_PI * 2 - 0.3))
-	//	{
-			//filteredLineBuffer.push_back(lineBuffer[n]);
-	//	}
-	//}
 
 	// create filter vector
 	vector<RhoTheta> averageFilter = lineBuffer;
@@ -347,6 +353,8 @@ void RobotVision::LineAnalysis()
 #pragma region DRAW_FUNCTIONS
 void RobotVision::DrawRectangle()
 {
+	cout<<"drawing rectangle..."<<endl;
+
 	// generate points from the line
 	double a = cos(leftSide.Theta);
 	double b = sin(leftSide.Theta);
@@ -498,6 +506,8 @@ void RobotVision::DrawRegionOfInterest()
 
 void RobotVision::DrawImportantRectangles()
 {
+	cout<<"drawing the important rectangles..."<<endl;
+
 	for (UINT n = 0; n < importantRectangles.size(); n++)
 	{
 		CvPoint topLeft;

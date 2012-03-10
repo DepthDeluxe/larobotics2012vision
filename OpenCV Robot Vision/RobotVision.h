@@ -51,6 +51,7 @@ struct Vector3D
 
 void rvPolarToCartesian(RhoTheta*, SlopeIntercept*);
 void rvCartesianToPolar(SlopeIntercept*, RhoTheta*);
+void rvRotateImage(IplImage*);
 
 class RobotVision
 {
