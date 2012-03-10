@@ -66,11 +66,8 @@ void RobotVision::GetNextFrame()
 	// get frame
 	image = cvQueryFrame(camera);
 
-	// convert to black and white
+	// get black and white frame
 	cvCvtColor(image, image_gray, CV_BGR2GRAY);
-
-	// do histogram equalizing on gray image
-	//cvEqualizeHist(image_gray, image_gray);
 }
 
 void RobotVision::DetectRectangle()
@@ -100,16 +97,22 @@ void RobotVision::DetectRectangle()
 		trackingTarget = true;
 	}
 	else
-		targetRectangle = Rect(0,0,0,0);
+		trackingTarget = false;
 
 	// crop the image only when it is within bounds of frame
-	if (targetRectangle.x > 10 && targetRectangle.y > 10)
+	if (targetRectangle.x > 10 && targetRectangle.y > 10 &&
+		targetRectangle.x + targetRectangle.width < 640 &&
+		targetRectangle.y + targetRectangle.height < 480 &&
+		trackingTarget)
 	{
 		Rect cropRect(targetRectangle.x - 10, targetRectangle.y - 10, targetRectangle.width + 20, targetRectangle.height + 20);
 
 		Mat matImage = Mat(image_gray);
 		image_roi = new IplImage(matImage(cropRect));
 	}
+
+	// free memory resources
+	cvReleaseImage(&copiedImage);
 }
 
 void RobotVision::LineAnalysis()
@@ -134,7 +137,7 @@ void RobotVision::LineAnalysis()
 	RhoTheta temp;
 	float* line;
 
-	// save rawLineBuffer values into lineBuffer
+	// convert CvSeq to RhoTheta format
 	for (int n = 0; n < rawLineBuffer->total; n++)
 	{
 		line = (float*)cvGetSeqElem(rawLineBuffer, n);
@@ -145,16 +148,8 @@ void RobotVision::LineAnalysis()
 		lineBuffer.push_back(temp);
 	}
 
-	filteredLineBuffer = lineBuffer;
-
-	// clear filter buffer
-	filteredLineBuffer.clear();
-
 	if (lineBuffer.size() > 100 || lineBuffer.size() < 8)
 		return;
-
-	bool* isPerp = new bool[lineBuffer.size()];
-	bool* isPara = new bool[lineBuffer.size()];
 
 	// if any of the rho values are negative, set them to be +
 	for (UINT n = 0; n < lineBuffer.size(); n++)
@@ -167,35 +162,31 @@ void RobotVision::LineAnalysis()
 	}
 
 	// check to see if horizontal or vertical lines
-	for (UINT n = 0; n < lineBuffer.size(); n++)
-	{
-		if ((lineBuffer[n].Theta < CV_PI / 2 + 0.3 && lineBuffer[n].Theta > CV_PI / 2 - 0.3)
-			|| (lineBuffer[n].Theta < 0.3 || lineBuffer[n].Theta > CV_PI * 2 - 0.3))
-		{
-			filteredLineBuffer.push_back(lineBuffer[n]);
-		}
-	}
-
-	// delete pointers related to this filtering
-	delete[] isPerp;
-	delete[] isPara;
+	//for (UINT n = 0; n < lineBuffer.size(); n++)
+	//{
+	//	if ((lineBuffer[n].Theta < CV_PI / 2 + 0.3 && lineBuffer[n].Theta > CV_PI / 2 - 0.3)
+	//		|| (lineBuffer[n].Theta < 0.3 || lineBuffer[n].Theta > CV_PI * 2 - 0.3))
+	//	{
+			//filteredLineBuffer.push_back(lineBuffer[n]);
+	//	}
+	//}
 
 	// create filter vector
-	vector<RhoTheta> averageFilter = filteredLineBuffer;
+	vector<RhoTheta> averageFilter = lineBuffer;
 
-	int* numAverages = new int[filteredLineBuffer.size()];
-	for (UINT n = 0; n < filteredLineBuffer.size(); n++)
+	int* numAverages = new int[lineBuffer.size()];
+	for (UINT n = 0; n < lineBuffer.size(); n++)
 		numAverages[n] = 1;
 
-	for (UINT avg = 0; avg < filteredLineBuffer.size(); avg++)
-		for (UINT comp = 0; comp < filteredLineBuffer.size(); comp++)
+	for (UINT avg = 0; avg < lineBuffer.size(); avg++)
+		for (UINT comp = 0; comp < lineBuffer.size(); comp++)
 		{
 			// if their rho values are similar, average the lines
-			if (abs(averageFilter[avg].Rho - filteredLineBuffer[comp].Rho) < 30
-				&& abs(averageFilter[avg].Theta - filteredLineBuffer[comp].Theta) < 1)
+			if (abs(averageFilter[avg].Rho - lineBuffer[comp].Rho) < 30
+				&& abs(averageFilter[avg].Theta - lineBuffer[comp].Theta) < 1)
 			{
-				averageFilter[avg].Rho = (averageFilter[avg].Rho * numAverages[avg] + filteredLineBuffer[comp].Rho) / (numAverages[avg]+1);
-				averageFilter[avg].Theta = (averageFilter[avg].Theta * numAverages[avg] + filteredLineBuffer[comp].Theta) / (numAverages[avg]+1);
+				averageFilter[avg].Rho = (averageFilter[avg].Rho * numAverages[avg] + lineBuffer[comp].Rho) / (numAverages[avg]+1);
+				averageFilter[avg].Theta = (averageFilter[avg].Theta * numAverages[avg] + lineBuffer[comp].Theta) / (numAverages[avg]+1);
 
 				// increase the number of averages
 				numAverages[avg]++;
@@ -203,54 +194,39 @@ void RobotVision::LineAnalysis()
 		}
 
 		// save modified averages back into original vector
-		filteredLineBuffer = averageFilter;
+		lineBuffer = averageFilter;
 		delete[] numAverages;
 
 		// remove multiple lines
 		averageFilter.clear();
 
-		bool singlePerp = false;
 		bool valueExists = false;
 
-		for (UINT l1 = 0; l1 < filteredLineBuffer.size(); l1++)
+		for (UINT l1 = 0; l1 < lineBuffer.size(); l1++)
 		{
-			// do perpendicular line checking
-			for (UINT comp = 0; comp < filteredLineBuffer.size(); comp++)
-			{
-				if (abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[comp].Theta) < CV_PI/2 + .25
-					&& abs(filteredLineBuffer[l1].Theta - filteredLineBuffer[comp].Theta) > CV_PI/2 - .25)
-				{
-					singlePerp = true;
-				}
-			}
-
 			// look to see if value exists
 			for (UINT l2 = 0; l2 < averageFilter.size(); l2++)
 			{
-				if (abs(filteredLineBuffer[l1].Rho - averageFilter[l2].Rho) < 20
-					&& abs(filteredLineBuffer[l1].Theta - averageFilter[l2].Theta) < 1)
+				if (abs(lineBuffer[l1].Rho - averageFilter[l2].Rho) < 20
+					&& abs(lineBuffer[l1].Theta - averageFilter[l2].Theta) < 1)
 				{
 					valueExists = true;
 				}
 			}
 
 			// if value doesn't exist, add it
-			if (!valueExists && singlePerp)
+			if (!valueExists)
 			{
-				averageFilter.push_back(filteredLineBuffer[l1]);
-				singlePerp = false;
+				averageFilter.push_back(lineBuffer[l1]);
 			}
 
 			valueExists = false;
 		}
 
-		filteredLineBuffer = averageFilter;
-
-		/// lines filtered ///
-		// now map the rectangles
+		lineBuffer = averageFilter;
 
 		// check to see if only 4 lines exist
-		if (filteredLineBuffer.size() != 4)
+		if (lineBuffer.size() != 4)
 			return;
 
 		// find horizontal and vertical lines
@@ -260,16 +236,16 @@ void RobotVision::LineAnalysis()
 
 		int hCount = 0, vCount = 0;
 
-		for (UINT n = 0; n < filteredLineBuffer.size(); n++)
+		for (UINT n = 0; n < lineBuffer.size(); n++)
 		{
-			if ((filteredLineBuffer[n].Theta < 1 || filteredLineBuffer[n].Theta > CV_PI * 2 - 1) && hCount < 2)
+			if ((lineBuffer[n].Theta < 1 || lineBuffer[n].Theta > CV_PI * 2 - 1) && hCount < 2)
 			{
-				horizLines[hCount] = filteredLineBuffer[n];
+				horizLines[hCount] = lineBuffer[n];
 				hCount++;
 			}
 			else if (vCount < 2)
 			{
-				vertLines[vCount] = filteredLineBuffer[n];
+				vertLines[vCount] = lineBuffer[n];
 				vCount++;
 			}
 		}
@@ -303,26 +279,48 @@ void RobotVision::LineAnalysis()
 		rvPolarToCartesian(&topSide, &tsCartesian);
 		rvPolarToCartesian(&bottomSide, &bsCartesian);
 
-		// and find edge points, x is incorrect here, will be corrected in next step
-		topLeftPoint.X = (lsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - lsCartesian.Slope);
-		topLeftPoint.Y = lsCartesian.Slope * topLeftPoint.X + lsCartesian.Intercept + targetRectangle.y - 10;
+		if (rsCartesian.Slope != 500.0f && lsCartesian.Slope != 500.0f)
+		{
+			topLeftPoint.X = (lsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - lsCartesian.Slope);
+			topLeftPoint.Y = lsCartesian.Slope * topLeftPoint.X + lsCartesian.Intercept;
 
-		topRightPoint.X = (rsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - rsCartesian.Slope);
-		topRightPoint.Y = rsCartesian.Slope * topRightPoint.X + rsCartesian.Intercept + targetRectangle.y - 10;
+			topRightPoint.X = (rsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - rsCartesian.Slope);
+			topRightPoint.Y = rsCartesian.Slope * topRightPoint.X + rsCartesian.Intercept;
 
-		bottomLeftPoint.X = (lsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - lsCartesian.Slope);
-		bottomLeftPoint.Y = lsCartesian.Slope * bottomLeftPoint.X + lsCartesian.Intercept + targetRectangle.y - 10;
+			bottomLeftPoint.X = (lsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - lsCartesian.Slope);
+			bottomLeftPoint.Y = lsCartesian.Slope * bottomLeftPoint.X + lsCartesian.Intercept;
 
-		bottomRightPoint.X = (rsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - rsCartesian.Slope);
-		bottomRightPoint.Y = rsCartesian.Slope * bottomRightPoint.X + rsCartesian.Intercept + targetRectangle.y - 10;
+			bottomRightPoint.X = (rsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - rsCartesian.Slope);
+			bottomRightPoint.Y = rsCartesian.Slope * bottomRightPoint.X + rsCartesian.Intercept;
+		}
+		else if (rsCartesian.Slope == 500.0f && lsCartesian.Slope != 500.0f)
+		{
+			topLeftPoint.X = (lsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - lsCartesian.Slope);
+			topLeftPoint.Y = lsCartesian.Slope * topLeftPoint.X + lsCartesian.Intercept;
 
-		// correct x coordinates for all the way over, y
-		// depended on the x so if it was converted first,
-		// the y was wayyy off
-		topLeftPoint.X += targetRectangle.x - 10;
-		topRightPoint.X += targetRectangle.x - 10;
-		bottomLeftPoint.X += targetRectangle.x - 10;
-		bottomRightPoint.X += targetRectangle.x - 10;
+			topRightPoint.X = rsCartesian.Intercept;
+			topRightPoint.Y = tsCartesian.Slope * topRightPoint.X + tsCartesian.Intercept;
+
+			bottomLeftPoint.X = (lsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - lsCartesian.Slope);
+			bottomLeftPoint.Y = lsCartesian.Slope * bottomLeftPoint.X + lsCartesian.Intercept;
+			
+			bottomRightPoint.X = rsCartesian.Intercept;
+			bottomLeftPoint.Y = bsCartesian.Slope * bottomLeftPoint.X + bsCartesian.Intercept;
+		}
+		else if(rsCartesian.Slope != 500.0f && lsCartesian.Slope == 500.0f)
+		{
+			topLeftPoint.X = lsCartesian.Intercept;
+			topLeftPoint.Y = tsCartesian.Slope * topLeftPoint.X + tsCartesian.Intercept;
+
+			topRightPoint.X = (rsCartesian.Intercept - tsCartesian.Intercept) / (tsCartesian.Slope - rsCartesian.Slope);
+			topRightPoint.Y = rsCartesian.Slope * topRightPoint.X + rsCartesian.Intercept;
+
+			bottomLeftPoint.X = lsCartesian.Intercept;
+			bottomLeftPoint.Y = bsCartesian.Slope * bottomLeftPoint.X + bsCartesian.Intercept;
+
+			bottomRightPoint.X = (rsCartesian.Intercept - bsCartesian.Intercept) / (bsCartesian.Slope - rsCartesian.Slope);
+			bottomRightPoint.Y = rsCartesian.Slope * bottomRightPoint.X + rsCartesian.Intercept;
+		}
 
 		// find the center of the rectangle by averaging the rectangle points
 		rectangleCenterPoint.X = (topLeftPoint.X + topRightPoint.X) / 2;
@@ -341,6 +339,9 @@ void RobotVision::LineAnalysis()
 		float relativeWidth = bottomRightPoint.X - bottomLeftPoint.X;
 		float actualWidth = relativeWidth / cos(angleOffset);
 		distanceToTarget = (float)RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
+
+		// free memory resources
+		//cvReleaseImage(&image_roi);
 }
 
 #pragma region DRAW_FUNCTIONS
@@ -403,7 +404,7 @@ void RobotVision::DrawRectangle()
 	// load them into CvPoint class
 	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x - 10;
 	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y - 10;
-	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x	- 10;
+	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x - 10;
 	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y - 10;
 
 	// draw bottom side
@@ -411,16 +412,16 @@ void RobotVision::DrawRectangle()
 
 	// convert to opencv point formats
 	CvPoint tl, tr, bl, br, center;
-	center.x = (int)rectangleCenterPoint.X;
-	center.y = (int)rectangleCenterPoint.Y;
-	tl.x = (int)topLeftPoint.X;
-	tl.y = (int)topLeftPoint.Y;
-	tr.x = (int)topRightPoint.X;
-	tr.y = (int)topRightPoint.Y;
-	bl.x = (int)bottomLeftPoint.X;
-	bl.y = (int)bottomLeftPoint.Y;
-	br.x = (int)bottomRightPoint.X;
-	br.y = (int)bottomRightPoint.Y;
+	center.x = (int)rectangleCenterPoint.X + targetRectangle.x - 10;
+	center.y = (int)rectangleCenterPoint.Y + targetRectangle.y - 10;
+	tl.x = (int)topLeftPoint.X + targetRectangle.x - 10;
+	tl.y = (int)topLeftPoint.Y + targetRectangle.y - 10;
+	tr.x = (int)topRightPoint.X + targetRectangle.x - 10;
+	tr.y = (int)topRightPoint.Y + targetRectangle.y - 10;
+	bl.x = (int)bottomLeftPoint.X + targetRectangle.x - 10;
+	bl.y = (int)bottomLeftPoint.Y + targetRectangle.y - 10;
+	br.x = (int)bottomRightPoint.X + targetRectangle.x - 10;
+	br.y = (int)bottomRightPoint.Y + targetRectangle.y - 10;
 
 	// draw points
 	cvCircle(image, center, 10, CV_RGB(255,255,255));
@@ -462,13 +463,13 @@ void RobotVision::DrawRectangle()
 
 void RobotVision::DrawHoughLines()
 {
-	for (UINT n = 0; n < filteredLineBuffer.size(); n++)
+	for (UINT n = 0; n < lineBuffer.size(); n++)
 	{
 		// generate points from the line
-		double a = cos(filteredLineBuffer[n].Theta);
-		double b = sin(filteredLineBuffer[n].Theta);
-		double x0 = a * filteredLineBuffer[n].Rho;
-		double y0 = b * filteredLineBuffer[n].Rho;
+		double a = cos(lineBuffer[n].Theta);
+		double b = sin(lineBuffer[n].Theta);
+		double x0 = a * lineBuffer[n].Rho;
+		double y0 = b * lineBuffer[n].Rho;
 
 		// load them into CvPoint class
 		CvPoint pt1, pt2;
