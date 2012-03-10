@@ -39,14 +39,6 @@ void rvCartesianToPolar(SlopeIntercept* input, RhoTheta* out)
 	}
 }
 
-void rvRotateImage(IplImage* image)
-{
-	Mat matImage(image);
-	Point2f centerPoint(640/2, 480/2);
-	matImage = getRotationMatrix2D(centerPoint, 90, 1.0);
-	*image = matImage;
-}
-
 RobotVision::RobotVision(int lo, int hi, int hou)
 {
 	lowThreshold = lo;
@@ -60,7 +52,12 @@ void RobotVision::Initialize()
 	camera = cvCaptureFromCAM(0);
 
 	// initialize variables
-	image = cvQueryFrame(camera);
+	IplImage* tempImg = cvQueryFrame(camera);
+	CvSize size;
+	size.width = tempImg->height;
+	size.height = tempImg->width;
+
+	image = cvCreateImage(size, tempImg->depth, 3);
 	image_gray = cvCreateImage(cvGetSize(image), image->depth, 1);
 	image_threshold = cvCreateImage(cvGetSize(image), image->depth, 1);
 
@@ -75,7 +72,7 @@ void RobotVision::Initialize()
 void RobotVision::GetNextFrame()
 {
 	// get frame
-	image = cvQueryFrame(camera);
+	cvTranspose(cvQueryFrame(camera), image);
 
 	// get black and white frame
 	cvCvtColor(image, image_gray, CV_BGR2GRAY);
@@ -92,8 +89,8 @@ void RobotVision::DetectRectangle()
 	// perform contour detection
 	////////////////////////////
 	CvSize size;
-	size.width = 640;
-	size.height = 480;
+	size.width = image->width;
+	size.height = image->height;
 
 	IplImage* copiedImage = cvCreateImage(size, image->depth, 1);
 	cvCopy(image_threshold, copiedImage);
@@ -471,7 +468,7 @@ void RobotVision::DrawRectangle()
 	// print offset in bottom left of screen
 	CvPoint tempPt;
 	tempPt.x = 5;
-	tempPt.y = 470;
+	tempPt.y = image->height - 10;
 	cvPutText(image, &displayText[0], tempPt, &font, CV_RGB(255,255,0));
 }
 
@@ -584,6 +581,7 @@ void RobotVision::Dispose()
 {
 	// dispose of all opencv objects
 	cvReleaseCapture(&camera);
+	cvReleaseImage(&image);
 	cvReleaseImage(&image_gray);
 	cvReleaseImage(&image_threshold);
 	cvReleaseMemStorage(&storage);
