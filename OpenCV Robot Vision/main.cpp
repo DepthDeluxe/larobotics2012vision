@@ -83,9 +83,8 @@ void main()
 		robotVision.LineAnalysis();
 
 		// draw functions
-		robotVision.DrawRectangle();
-		//robotVision.DrawRegionOfInterest();
 		robotVision.DrawImportantRectangles();
+		robotVision.DrawRectangle();
 
 		// display the original image with hough lines on top of them
 		if (currentImageView == 1)
