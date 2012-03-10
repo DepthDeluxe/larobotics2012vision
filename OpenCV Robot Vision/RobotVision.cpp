@@ -83,7 +83,7 @@ void RobotVision::GetNextFrame()
 
 void RobotVision::DetectRectangle()
 {
-	cout<<"detecting rectangle..."<<endl;
+	//cout<<"detecting rectangle..."<<endl;
 
 	// filter gray image
 	////////////////////
@@ -107,18 +107,22 @@ void RobotVision::DetectRectangle()
 	if (targetNum >= 0)
 	{
 		targetRectangle = importantRectangles[targetNum];
+		targetRectangle.x -= 10;
+		targetRectangle.y -= 10;
+		targetRectangle.width += 20;
+		targetRectangle.height += 20;
+
 		trackingTarget = true;
 	}
 
 	// crop the image only when it is within bounds of frame
-	if (targetRectangle.x > 10 && targetRectangle.y > 10 &&
+	if (targetRectangle.x > 0 && targetRectangle.y > 0 &&
+		targetRectangle.width > 0 && targetRectangle.height > 0 &&
 		targetRectangle.x + targetRectangle.width < 640 &&
 		targetRectangle.y + targetRectangle.height < 480 &&
-		targetRectangle.width > 0 && targetRectangle.height > 0 &&
-		targetRectangle.width < 620 && targetRectangle.height < 460 &&
 		trackingTarget)
 	{
-		Rect cropRect(targetRectangle.x - 10, targetRectangle.y - 10, targetRectangle.width + 20, targetRectangle.height + 20);
+		Rect cropRect(targetRectangle.x, targetRectangle.y, targetRectangle.width, targetRectangle.height);
 
 		Mat matImage = Mat(image_gray);
 		matImage = matImage(cropRect);
@@ -137,7 +141,7 @@ void RobotVision::LineAnalysis()
 	if (!trackingTarget)
 		return;
 
-	cout<<"performing line analysis..."<<endl;
+	//cout<<"performing line analysis..."<<endl;
 
 	trackingTarget = false;
 
@@ -355,7 +359,7 @@ void RobotVision::LineAnalysis()
 #pragma region DRAW_FUNCTIONS
 void RobotVision::DrawRectangle()
 {
-	cout<<"drawing rectangle..."<<endl;
+	//cout<<"drawing rectangle..."<<endl;
 
 	// generate points from the line
 	double a = cos(leftSide.Theta);
@@ -365,10 +369,10 @@ void RobotVision::DrawRectangle()
 
 	// load them into CvPoint class
 	CvPoint pt1, pt2;
-	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x - 10;
-	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y - 10;
-	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x - 10;
-	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y - 10;
+	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x;
+	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y;
+	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x;
+	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y;
 
 	// draw left side
 	cvLine( image, pt1, pt2, CV_RGB(255,0,0), 3, 8 );
@@ -381,10 +385,10 @@ void RobotVision::DrawRectangle()
 	y0 = b * rightSide.Rho;
 
 	// load them into CvPoint class
-	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x - 10;
-	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y - 10;
-	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x - 10;
-	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y - 10;
+	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x;
+	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y;
+	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x;
+	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y;
 
 	// draw right side
 	cvLine( image, pt1, pt2, CV_RGB(0,255,0), 3, 8 );
@@ -397,10 +401,10 @@ void RobotVision::DrawRectangle()
 	y0 = b * topSide.Rho;
 
 	// load them into CvPoint class
-	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x - 10;
-	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y - 10;
-	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x - 10;
-	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y - 10;
+	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x;
+	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y;
+	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x;
+	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y;
 
 	// draw top side
 	cvLine( image, pt1, pt2, CV_RGB(0,0,255), 3, 8 );
@@ -412,26 +416,26 @@ void RobotVision::DrawRectangle()
 	y0 = b * bottomSide.Rho;
 
 	// load them into CvPoint class
-	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x - 10;
-	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y - 10;
-	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x - 10;
-	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y - 10;
+	pt1.x = cvRound(x0 + 1000*(-b)) + targetRectangle.x;
+	pt1.y = cvRound(y0 + 1000*(a)) + targetRectangle.y;
+	pt2.x = cvRound(x0 - 1000*(-b)) + targetRectangle.x;
+	pt2.y = cvRound(y0 - 1000*(a)) + targetRectangle.y;
 
 	// draw bottom side
 	cvLine( image, pt1, pt2, CV_RGB(255,255,0), 3, 8 );
 
 	// convert to opencv point formats
 	CvPoint tl, tr, bl, br, center;
-	center.x = (int)rectangleCenterPoint.X + targetRectangle.x - 10;
-	center.y = (int)rectangleCenterPoint.Y + targetRectangle.y - 10;
-	tl.x = (int)topLeftPoint.X + targetRectangle.x - 10;
-	tl.y = (int)topLeftPoint.Y + targetRectangle.y - 10;
-	tr.x = (int)topRightPoint.X + targetRectangle.x - 10;
-	tr.y = (int)topRightPoint.Y + targetRectangle.y - 10;
-	bl.x = (int)bottomLeftPoint.X + targetRectangle.x - 10;
-	bl.y = (int)bottomLeftPoint.Y + targetRectangle.y - 10;
-	br.x = (int)bottomRightPoint.X + targetRectangle.x - 10;
-	br.y = (int)bottomRightPoint.Y + targetRectangle.y - 10;
+	center.x = (int)rectangleCenterPoint.X + targetRectangle.x;
+	center.y = (int)rectangleCenterPoint.Y + targetRectangle.y;
+	tl.x = (int)topLeftPoint.X + targetRectangle.x;
+	tl.y = (int)topLeftPoint.Y + targetRectangle.y;
+	tr.x = (int)topRightPoint.X + targetRectangle.x;
+	tr.y = (int)topRightPoint.Y + targetRectangle.y;
+	bl.x = (int)bottomLeftPoint.X + targetRectangle.x;
+	bl.y = (int)bottomLeftPoint.Y + targetRectangle.y;
+	br.x = (int)bottomRightPoint.X + targetRectangle.x;
+	br.y = (int)bottomRightPoint.Y + targetRectangle.y;
 
 	// draw points
 	cvCircle(image, center, 10, CV_RGB(255,255,255));
@@ -508,7 +512,7 @@ void RobotVision::DrawRegionOfInterest()
 
 void RobotVision::DrawImportantRectangles()
 {
-	cout<<"drawing the important rectangles..."<<endl;
+	//cout<<"drawing the important rectangles..."<<endl;
 
 	for (UINT n = 0; n < importantRectangles.size(); n++)
 	{
