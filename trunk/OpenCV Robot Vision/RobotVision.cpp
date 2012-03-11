@@ -115,8 +115,8 @@ void RobotVision::DetectRectangle()
 	// crop the image only when it is within bounds of frame
 	if (targetRectangle.x > 0 && targetRectangle.y > 0 &&
 		targetRectangle.width > 0 && targetRectangle.height > 0 &&
-		targetRectangle.x + targetRectangle.width < 640 &&
-		targetRectangle.y + targetRectangle.height < 480 &&
+		targetRectangle.x + targetRectangle.width < image->width &&
+		targetRectangle.y + targetRectangle.height < image->height &&
 		trackingTarget)
 	{
 		Rect cropRect(targetRectangle.x, targetRectangle.y, targetRectangle.width, targetRectangle.height);
@@ -191,7 +191,7 @@ void RobotVision::LineAnalysis()
 		for (UINT comp = 0; comp < lineBuffer.size(); comp++)
 		{
 			// if their rho values are similar, average the lines
-			if (abs(averageFilter[avg].Rho - lineBuffer[comp].Rho) < 30
+			if (abs(averageFilter[avg].Rho - lineBuffer[comp].Rho) < 20
 				&& abs(averageFilter[avg].Theta - lineBuffer[comp].Theta) < 1)
 			{
 				averageFilter[avg].Rho = (averageFilter[avg].Rho * numAverages[avg] + lineBuffer[comp].Rho) / (numAverages[avg]+1);
@@ -343,7 +343,7 @@ void RobotVision::LineAnalysis()
 		diffSlope = bottomSlope - topSlope;
 
 		// find offset angle with small angle approximation
-		angleOffset = (float)RV_CAMERA_SKEW_CONST * diffSlope;
+		angleOffset = (float)RV_CAMERA_VERT_SKEW_CONST * diffSlope;
 
 		float relativeWidth = bottomRightPoint.X - bottomLeftPoint.X;
 		float actualWidth = relativeWidth / cos(angleOffset);
@@ -575,6 +575,16 @@ IplImage* RobotVision::GetThresholdImage()
 {
 	return image_threshold;
 }
+
+RectangleInformation RobotVision::GetRectangleInformation()
+{
+	rectangleInformation.Distance = distanceToTarget;
+	rectangleInformation.AngleOffset = angleOffset;
+	rectangleInformation.RectangleCenter = rectangleCenterPoint;
+
+	return rectangleInformation;
+}
+
 #pragma endregion
 
 void RobotVision::Dispose()
