@@ -1,3 +1,6 @@
+#ifndef UTILITY_CPP
+#define UTILITY_CPP
+
 #include "Utility.h"
 
 NetworkDebuggingOutput::NetworkDebuggingOutput(char* ip, int port)
@@ -24,7 +27,7 @@ NetworkDebuggingOutput::NetworkDebuggingOutput(char* ip, int port)
 	}
 
 	// create send socket
-	socket = socket(AF_INET, SOCK_DGRAM, 0);
+	Socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 	hostent* host;
 	host = gethostbyname(ip);
@@ -32,13 +35,17 @@ NetworkDebuggingOutput::NetworkDebuggingOutput(char* ip, int port)
 	memset(&connectAddress, 0, sizeof connectAddress);
 
 	connectAddress.sin_family = AF_INET;
-	connectAddress.sin_addr.s_addr = ((in_addr*)(host->h_addr))->s_addr;
+	connectAddress.sin_addr.s_addr = ((struct in_addr *)(host->h_addr))->s_addr;
 	connectAddress.sin_port = htons(port);
 
 	// try and start connection
-	if (connect(socket, (sockaddr*)&connectAddress, sizeof connectAddress) == SOCKET_ERROR)
+	if (connect(Socket, (sockaddr*)&connectAddress, sizeof connectAddress) == SOCKET_ERROR)
 	{
+		int lastError = WSAGetLastError();
+		WSACleanup();
+		cout << "Error: " << lastError << endl;
 		cout << "Error: could not create datagram socket" << endl;
+		return;
 	}
 }
 
@@ -51,16 +58,29 @@ void NetworkDebuggingOutput::Send(RectangleInformation rInformation)
 		rInformation.Distance, rInformation.AngleOffset,
 		rInformation.RectangleCenter.X, rInformation.RectangleCenter.Y);
 
+	// format output so it prints very nice!
+	bool foundEnd = false;
+	for (int n = 0; (!foundEnd && n < 99) || (foundEnd && n < 100); n++)
+	{
+		if (sendBuffer[n] == '\r' && sendBuffer[n+1] == '\n')
+			foundEnd = true;
+
+		if (foundEnd)
+			sendBuffer[n] = 0;
+	}
+
 	// send the information
-	send(socket, sendBuffer, strlen(sendBuffer), 0);
+	send(Socket, sendBuffer, strlen(sendBuffer), 0);
 }
 
 NetworkDebuggingOutput::~NetworkDebuggingOutput()
 {
 	// close the socket
-	shutdown(socket, SD_BOTH);
-	closesocket(socket);
+	shutdown(Socket, 0x02);
+	closesocket(Socket);
 
 	// shutdown winsock
 	WSACleanup();
 }
+
+#endif
