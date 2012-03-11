@@ -1,9 +1,14 @@
+#ifndef ROBOTVISION_H
+#define ROBOTVISION_H
+
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv/cv.h>
 
 #include <vector>
+
+#include "LookupTable.h"
 
 using namespace std;
 using namespace cv;
@@ -17,7 +22,8 @@ using namespace cv;
 #define RV_CAMERA_HEIGHT			480
 #define RV_CAMERA_FOV_WIDTH_CONST	16421.3
 #define RV_CAMERA_FOV_HEIGHT_CONST	11269.3
-#define RV_CAMERA_SKEW_CONST		-8.3926
+#define RV_CAMERA_HORIZ_SKEW_CONST	-8.3926
+#define RV_CAMERA_VERT_SKEW_CONST	-11.065
 
 #define HAWK_MIN_AREA	50
 #define HAWK_AS_ERROR	0.48
@@ -47,6 +53,12 @@ struct Vector3D
 	float X;
 	float Y;
 	float Z;
+};
+
+struct RectangleInformation
+	: public LookupTableInput
+{
+	Vector2D RectangleCenter;
 };
 
 void rvPolarToCartesian(RhoTheta*, SlopeIntercept*);
@@ -80,6 +92,8 @@ public:
 	IplImage* GetRegionOfInterestImage();
 	IplImage* GetThresholdImage();
 
+	RectangleInformation GetRectangleInformation();
+
 	// private members
 private:
 	CvCapture*	camera;
@@ -103,8 +117,12 @@ private:
 	float				angleOffset;
 	float				distanceToTarget;
 
+	RectangleInformation rectangleInformation;
+
 	int lowThreshold;
 	int highThreshold;
 	int houghThreshold;
 	int binaryThreshold;
 };
+
+#endif
