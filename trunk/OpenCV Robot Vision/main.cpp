@@ -51,6 +51,7 @@ void main(int argc, char* argv[])
 {
 	bool displayWindows = true;
 	bool debugOutput = false;
+	char* ip = NULL;
 
 	// process command line statements
 	for (int n = 1; n < argc; n++)
@@ -63,6 +64,12 @@ void main(int argc, char* argv[])
 		else if (strcmp(argv[n], "-do") == 0)
 		{
 			debugOutput = true;
+			
+			if (n+1 < argc && argv[n+1][0] != '-')
+			{
+				ip = argv[n+1];
+				n++;
+			}
 		}
 
 		else if (strcmp(argv[n], "?") == 0)
@@ -97,8 +104,18 @@ void main(int argc, char* argv[])
 	robotVision.Initialize();
 
 	// create instance of NetworkDebuggingOutput
-	cout << "starting debugging output on port 192.168.2.17..." << endl;
-	NetworkDebuggingOutput output("192.168.2.17", 6666);
+	NetworkDebuggingOutput* output;
+	if (debugOutput && ip != NULL)
+	{
+			cout << "starting debugging output on port ";
+			cout << ip << "..." << endl;
+			output = new NetworkDebuggingOutput(ip, 6666);
+	}
+	else if (debugOutput)
+	{
+		cout << "starting debugging output on port 192.168.1.14..." << endl;
+		output = new NetworkDebuggingOutput("192.168.1.14", 6666);
+	}
 
 	if (displayWindows)
 	{
@@ -157,7 +174,7 @@ void main(int argc, char* argv[])
 
 			// send to debugging output
 			if (debugOutput)
-				output.Send(robotVision.GetRectangleInformation());
+				output->Send(robotVision.GetRectangleInformation());
 		}
 	}
 	else
@@ -180,10 +197,17 @@ void main(int argc, char* argv[])
 			robotVision.LineAnalysis();
 
 			if (debugOutput)
-				output.Send(robotVision.GetRectangleInformation());
+				output->Send(robotVision.GetRectangleInformation());
 
 			if (kbhit() == 1)
 				key = getch();
+
+			if (key == ' ')
+			{
+				cout << "Distance: " << robotVision.GetRectangleInformation().Distance << "\t";
+				cout << "Offset: " << robotVision.GetRectangleInformation().AngleOffset << endl;
+				key = 0;
+			}
 		}
 	}
 
@@ -200,7 +224,10 @@ void main(int argc, char* argv[])
 
 	// save file only if windows are shown
 	if (displayWindows)
+	{
+		cout << "saving constants..." << endl;
 		SaveData();
+	}
 }
 
 void SaveData()
