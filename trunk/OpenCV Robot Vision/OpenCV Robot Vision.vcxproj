@@ -89,12 +89,14 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RobotVision.cpp" />
     <ClCompile Include="RobotVisionNetworking.cpp" />
+    <ClCompile Include="Utillity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ContourTracker.h" />
     <ClInclude Include="LookupTable.h" />
     <ClInclude Include="RobotVision.h" />
     <ClInclude Include="RobotVisionNetworking.h" />
+    <ClInclude Include="Utility.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Clipboard.txt" />
