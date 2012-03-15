@@ -345,9 +345,12 @@ void RobotVision::LineAnalysis()
 		// find offset angle with small angle approximation
 		angleOffset = (float)RV_CAMERA_VERT_SKEW_CONST * diffSlope;
 
-		float relativeWidth = bottomRightPoint.X - bottomLeftPoint.X;
-		float actualWidth = relativeWidth / cos(angleOffset);
-		distanceToTarget = (float)RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
+		//float relativeWidth = bottomRightPoint.X - bottomLeftPoint.X;
+		//float actualWidth = relativeWidth / cos(angleOffset);
+		//distanceToTarget = (float)RV_CAMERA_FOV_WIDTH_CONST / actualWidth;
+
+		float relativeWidth = ((bottomLeftPoint.Y - topLeftPoint.Y) + (bottomRightPoint.Y - topRightPoint.Y)/2);
+		distanceToTarget = (float)RV_CAMERA_FOV_HEIGHT_CONST / relativeWidth;
 
 		// free memory resources
 		//cvReleaseImage(&image_roi);

@@ -14,7 +14,7 @@ public:
 	~NetworkDebuggingOutput();
 
 private:
-	SOCKET Socket;
+	SOCKET consoleSocket;
 	sockaddr_in connectAddress;
 };
 

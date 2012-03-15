@@ -3,7 +3,7 @@
 
 #include "Utility.h"
 
-NetworkDebuggingOutput::NetworkDebuggingOutput(char* ip, int port)
+NetworkDebuggingOutput::NetworkDebuggingOutput(char* address, int port)
 {
 	WSAData wsaData;
 	WORD version;
@@ -27,26 +27,27 @@ NetworkDebuggingOutput::NetworkDebuggingOutput(char* ip, int port)
 	}
 
 	// create send socket
-	Socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-	hostent* host;
-	host = gethostbyname(ip);
+	consoleSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 	memset(&connectAddress, 0, sizeof connectAddress);
 
+	LPHOSTENT host;
+	host = gethostbyname(address);
+
+	// need to change back to connect socket
 	connectAddress.sin_family = AF_INET;
-	connectAddress.sin_addr.s_addr = ((struct in_addr *)(host->h_addr))->s_addr;
+	connectAddress.sin_addr.s_addr = ((in_addr*)(host->h_addr))->s_addr;
 	connectAddress.sin_port = htons(port);
 
 	// try and start connection
-	if (connect(Socket, (sockaddr*)&connectAddress, sizeof connectAddress) == SOCKET_ERROR)
+	if (connect(consoleSocket, (sockaddr*)&connectAddress, sizeof connectAddress) == SOCKET_ERROR)
 	{
 		int lastError = WSAGetLastError();
 		WSACleanup();
 		cout << "Error: " << lastError << endl;
-		cout << "Error: could not create datagram socket" << endl;
+		cout << "Error: could not create console socket!" << endl;
 		return;
-	}
+	}	
 }
 
 void NetworkDebuggingOutput::Send(RectangleInformation rInformation)
@@ -70,14 +71,20 @@ void NetworkDebuggingOutput::Send(RectangleInformation rInformation)
 	}
 
 	// send the information
-	send(Socket, sendBuffer, strlen(sendBuffer), 0);
+	int bytesSent = 0;
+	bytesSent = send(consoleSocket, sendBuffer, strlen(sendBuffer), 0);
+
+	if (bytesSent < 0)
+	{
+		cout << "Winsock Error: " << WSAGetLastError() << endl;
+	}
 }
 
 NetworkDebuggingOutput::~NetworkDebuggingOutput()
 {
 	// close the socket
-	shutdown(Socket, 0x02);
-	closesocket(Socket);
+	shutdown(consoleSocket, 0x02);
+	closesocket(consoleSocket);
 
 	// shutdown winsock
 	WSACleanup();
