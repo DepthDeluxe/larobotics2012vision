@@ -51,7 +51,7 @@ void main(int argc, char* argv[])
 {
 	bool displayWindows = true;
 	bool debugOutput = false;
-	char* ip = NULL;
+	char* ip;
 
 	// process command line statements
 	for (int n = 1; n < argc; n++)
@@ -61,15 +61,11 @@ void main(int argc, char* argv[])
 			displayWindows = false;
 		}
 
-		else if (strcmp(argv[n], "-do") == 0)
+		else if (strcmp(argv[n], "-do") == 0 && argc > n+1)
 		{
 			debugOutput = true;
-			
-			if (n+1 < argc && argv[n+1][0] != '-')
-			{
-				ip = argv[n+1];
-				n++;
-			}
+			ip = argv[n+1];
+			n++;
 		}
 
 		else if (strcmp(argv[n], "?") == 0)
@@ -105,16 +101,10 @@ void main(int argc, char* argv[])
 
 	// create instance of NetworkDebuggingOutput
 	NetworkDebuggingOutput* output;
-	if (debugOutput && ip != NULL)
+	if (debugOutput)
 	{
-			cout << "starting debugging output on port ";
-			cout << ip << "..." << endl;
+			cout << "starting debugging output on port 6666" << endl;
 			output = new NetworkDebuggingOutput(ip, 6666);
-	}
-	else if (debugOutput)
-	{
-		cout << "starting debugging output on port 192.168.1.14..." << endl;
-		output = new NetworkDebuggingOutput("192.168.1.14", 6666);
 	}
 
 	if (displayWindows)
@@ -197,10 +187,12 @@ void main(int argc, char* argv[])
 			robotVision.LineAnalysis();
 
 			if (debugOutput)
+			{
 				output->Send(robotVision.GetRectangleInformation());
+			}
 
-			if (kbhit() == 1)
-				key = getch();
+			if (_kbhit() == 1)
+				key = _getch();
 
 			if (key == ' ')
 			{
